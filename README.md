@@ -28,7 +28,7 @@ La fuente principal es la orden anual de fiestas locales del DOGC. Los datos abi
 2. `node scripts/leer-orden-dogc.js orden.txt 2027 > data/orden-2027.json`
 3. Descargar el CSV de datos abiertos (códigos INE):
    https://analisi.transparenciacatalunya.cat/api/views/b4eh-r8up/rows.csv?accessType=DOWNLOAD
-4. `node scripts/construir-locales.js data/orden-2027.json festes.csv 2027 > data/locales-2027.json`
+4. `node scripts/construir-locales.js data/orden-2027.json festes.csv 2027 [data/modificaciones-2027.json] > data/locales-2027.json`
 5. Revisar los informes de los dos scripts: municipios sin código, núcleos, número de fiestas distinto de 2.
 6. Revisar también las órdenes que modifiquen la anual (en 2026, la Ordre EMT/3/2026).
 7. Incorporar `municipios`, `locales`, `estado` y `nucleos` del año a `data/calendario.json`, y documentar en `anomalias` cualquier municipio con un número de fiestas distinto de 2.
@@ -37,7 +37,7 @@ La fuente principal es la orden anual de fiestas locales del DOGC. Los datos abi
 ## Estado de los datos (20/10/2026)
 
 - Festivos generales 2026 (Ordre EMT/66/2025) y 2027 (Ordre EMT/52/2026), con la sustitución del 17 de junio en la Val d'Aran. Falta cotejar el texto literal de Arán en el DOGC.
-- Festivos locales 2026: los 947 municipios y 409 núcleos de la Ordre EMT/208/2025 (DOGC 9565). 33 ayuntamientos sin propuesta y 31 municipios con fiestas solo por núcleo. 9 municipios sin código INE en los datos abiertos llevan una clave provisional `dogc-*`.
+- Festivos locales 2026: los 947 municipios y 409 núcleos de la Ordre EMT/208/2025 (DOGC 9565). 30 ayuntamientos sin propuesta y 31 municipios con fiestas solo por núcleo. 9 municipios sin código INE en los datos abiertos llevan una clave provisional `dogc-*`.
 - Contraste con los datos abiertos: 868 municipios idénticos fecha a fecha. Los datos abiertos omiten 77 municipios y atribuyen a Avinyonet del Penedès las fiestas de un núcleo.
-- Pendiente: la Ordre EMT/3/2026 (DOGC 9586, 20/01/2026), que modifica la de 2026.
+- Aplicada la Ordre EMT/3/2026 (DOGC 9586, 20/01/2026): 10 municipios modificados (data/modificaciones-2026.json).
 - Festivos locales 2027: pendientes de publicación.

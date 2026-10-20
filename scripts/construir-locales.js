@@ -1,7 +1,10 @@
 // Genera los festivos locales de un año usando la orden del DOGC como fuente principal.
 // El CSV de datos abiertos solo se usa para obtener los códigos INE de municipios y núcleos.
 //
-// Uso: node scripts/construir-locales.js data/orden-2026.json festes.csv 2026 > data/locales-2026.json
+// Uso: node scripts/construir-locales.js data/orden-2026.json festes.csv 2026 [data/modificaciones-2026.json] > data/locales-2026.json
+//
+// Las modificaciones posteriores de la orden se aplican desde un fichero aparte: cada entrada
+// indica el texto anterior ("antes") y se comprueba que coincide con la orden antes de sustituirlo.
 //
 // Salida:
 //   municipios: { ine: nombre }
@@ -11,8 +14,21 @@
 import { readFileSync } from 'node:fs';
 import { nombreVisible } from '../src/lib/municipios.js';
 
-const [, , rutaOrden, rutaCsv, anio] = process.argv;
+const [, , rutaOrden, rutaCsv, anio, rutaMods] = process.argv;
 const orden = JSON.parse(readFileSync(rutaOrden, 'utf8')).municipios;
+
+if (rutaMods) {
+  const mods = JSON.parse(readFileSync(rutaMods, 'utf8'));
+  for (const mod of mods.municipios) {
+    const m = orden.find((x) => x.nombre === mod.nombre);
+    if (!m) throw new Error(`Modificación: ${mod.nombre} no está en la orden`);
+    const eraSinPropuesta = /proposta no formulada/.test(mod.antes);
+    if (eraSinPropuesta !== m.sinPropuesta) throw new Error(`Modificación: ${mod.nombre} no coincide con el texto anterior`);
+    if (!eraSinPropuesta && m.fechas.length !== (mod.antes.match(/\d+ d/g) ?? []).length) throw new Error(`Modificación: ${mod.nombre} no coincide con el texto anterior`);
+    m.fechas = mod.fechas; m.sinPropuesta = false;
+  }
+  console.error(`Modificaciones aplicadas (${mods.fuente}): ${mods.municipios.length}`);
+}
 
 function parseCSV(texto) {
   const filas = []; let fila = [], campo = '', q = false;

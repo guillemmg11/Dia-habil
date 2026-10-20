@@ -66,10 +66,23 @@ test('núcleo con fiestas propias: Raimat (Lleida) y Vielha', () => {
 });
 
 test('municipio sin propuesta: solo cuentan los festivos generales, sin aviso de datos pendientes', () => {
-  // Viladecans no formuló propuesta para 2026. 10 días hábiles desde el 1/9/2026: 2,3,4,7,8,9,10, 11 Diada, 14,15,16 -> 16/9.
-  const r = calcularPlazo({ inicio: '2026-09-01', cantidad: 10, unidad: 'dias_habiles', municipios: ['08301'] }, cal);
+  // Cerdanyola del Vallès no formuló propuesta para 2026. 10 días hábiles desde el 1/9/2026:
+  // 2,3,4,7,8,9,10, 11 Diada, 14,15,16 -> 16/9.
+  const r = calcularPlazo({ inicio: '2026-09-01', cantidad: 10, unidad: 'dias_habiles', municipios: ['08266'] }, cal);
   assert.equal(r.vencimiento, '2026-09-16');
   assert.ok(!r.avisos.some((a) => a.tipo === 'sin_locales'));
+});
+
+test('Ordre EMT/3/2026: modificaciones aplicadas', () => {
+  // Viladecans presentó propuesta tarde: 25/5 y 8/9. Mismo cálculo que Cerdanyola, pero el 8/9 es inhábil -> 17/9.
+  const vila = calcularPlazo({ inicio: '2026-09-01', cantidad: 10, unidad: 'dias_habiles', municipios: ['08301'] }, cal);
+  assert.equal(vila.vencimiento, '2026-09-17');
+  // Castelldefels: el 14/9 se cambió por el 14/8.
+  assert.ok(cal.motivosInhabil('2026-08-14', ['08056']).some((m) => m.tipo === 'local'));
+  assert.equal(cal.motivosInhabil('2026-09-14', ['08056']).length, 0);
+  // Sitges: se añadió el 24/8.
+  assert.ok(cal.motivosInhabil('2026-08-24', ['08270']).some((m) => m.tipo === 'local'));
+  assert.equal(datos.estado['2026']['08301'], undefined);
 });
 
 test('12 festivos generales por año en Cataluña (sin contar sustituciones territoriales)', () => {

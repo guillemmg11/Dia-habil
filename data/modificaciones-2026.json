@@ -1,0 +1,15 @@
+{
+  "fuente": "Ordre EMT/3/2026, de 14 de gener (DOGC núm. 9586, 20.1.2026), de modificació de l'Ordre EMT/208/2025",
+  "municipios": [
+    { "nombre": "Cardona", "antes": "proposta no formulada", "fechas": ["2026-09-14", "2026-09-15"] },
+    { "nombre": "Viladecans", "antes": "proposta no formulada", "fechas": ["2026-05-25", "2026-09-08"] },
+    { "nombre": "Sant Joan Despí", "antes": "25 de maig i 29 de setembre", "fechas": ["2026-05-25", "2026-09-24"] },
+    { "nombre": "Castelldefels", "antes": "14 de setembre i 7 de desembre", "fechas": ["2026-08-14", "2026-12-07"] },
+    { "nombre": "Sitges", "antes": "23 de setembre", "fechas": ["2026-08-24", "2026-09-23"] },
+    { "nombre": "Tordera", "antes": "11 de març i 24 d'agost", "fechas": ["2026-05-11", "2026-08-24"] },
+    { "nombre": "Balenyà", "antes": "21 de gener i 24 de juliol", "fechas": ["2026-01-21", "2026-08-24"] },
+    { "nombre": "Tavèrnoles", "antes": "proposta no formulada", "fechas": ["2026-05-25", "2026-08-03"] },
+    { "nombre": "Torà", "antes": "25 d'agost i 1 de setembre", "fechas": ["2026-05-25", "2026-09-01"] },
+    { "nombre": "Polinyà", "antes": "20 de gener i 13 de juliol", "fechas": ["2026-01-20", "2026-07-06"] }
+  ]
+}
