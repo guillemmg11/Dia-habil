@@ -3,12 +3,17 @@ import Base from '../layouts/Base.astro';
 import { t, rutas, fechaLarga } from '../i18n.js';
 import datos from '../../data/calendario.json';
 import { crearCalendario } from '../lib/calendario.js';
+import { nombreVisible } from '../lib/municipios.js';
 interface Props { lang: 'ca' | 'es'; year: number; muni: { codigo: string; nombre: string; slug: string }; indexado: boolean; }
 const { lang, year, muni, indexado } = Astro.props;
 const s = t[lang];
 const generales = crearCalendario(datos).generalesDe(year, muni.codigo);
 const anomalia = (datos as any).anomalias?.[muni.codigo]?.[lang];
 const locales = ((datos.locales as any)[String(year)] ?? {})[muni.codigo] ?? null;
+const estado = (datos as any).estado?.[String(year)]?.[muni.codigo];
+const nucleos = Object.entries((datos as any).nucleos?.[String(year)] ?? {})
+  .filter(([, n]: any) => n.municipio === muni.codigo)
+  .map(([codigo, n]: any) => ({ codigo, nombre: nombreVisible(n.nombre), fechas: n.fechas, sinPropuesta: n.sinPropuesta }));
 const filas = [
   ...generales.map((f: any) => ({ fecha: f.fecha, nombre: f.nombre[lang] ?? f.nombre, tipo: s[f.ambito as 'estatal' | 'autonomico'] })),
   ...(locales ?? []).map((f: any) => ({ fecha: f.fecha, nombre: s.festivoLocal, tipo: s.local })),
@@ -33,11 +38,20 @@ const calcUrl = `${rutas.calculadora[lang]}?m1=${muni.codigo}`;
     ? `Calendari laboral de ${muni.nombre} per a ${year}. Aquests dies també són inhàbils per comptar terminis administratius.`
     : `Calendario laboral de ${muni.nombre} para ${year}. Estos días también son inhábiles para contar plazos administrativos.`}</p>
   {anomalia && year === 2026 && <p class="aviso">{anomalia}</p>}
+  {estado === 'sin_propuesta' && <p class="aviso">{s.sinPropuesta.replace('{y}', String(year))}</p>}
+  {estado === 'solo_nucleos' && <p class="aviso">{s.soloNucleos.replace('{m}', muni.nombre)}</p>}
   {!locales && <p class="aviso">{s.pendientes.replace('{y}', String(year))}</p>}
   <table>
     <thead><tr><th>{lang === 'ca' ? 'Data' : 'Fecha'}</th><th>{s.festivos}</th><th>{lang === 'ca' ? 'Tipus' : 'Tipo'}</th></tr></thead>
     <tbody>{filas.map((f) => <tr><td>{fechaLarga(f.fecha, lang)}</td><td>{f.nombre}</td><td>{f.tipo}</td></tr>)}</tbody>
   </table>
-  <p><a href={calcUrl}><strong>{s.calcularEn.replace('{m}', muni.nombre)}</strong></a></p>
+  {nucleos.length > 0 && (<>
+    <h2>{s.nucleos}</h2>
+    <table><tbody>{nucleos.map((n) => (
+      <tr><td><a href={`${rutas.calculadora[lang]}?m1=${n.codigo}`}>{n.nombre}</a></td>
+      <td>{n.sinPropuesta ? '—' : n.fechas.map((f: any) => fechaLarga(f.fecha, lang)).join(' · ')}</td></tr>))}
+    </tbody></table>
+  </>)}
+  {estado !== 'solo_nucleos' && <p><a href={calcUrl}><strong>{s.calcularEn.replace('{m}', muni.nombre)}</strong></a></p>}
   <p class="nota">{s.fuente}: {lang === 'ca' ? 'Generalitat de Catalunya (DOGC i dades obertes) i BOE.' : 'Generalitat de Catalunya (DOGC y datos abiertos) y BOE.'} {s.avisoDatos}</p>
 </Base>

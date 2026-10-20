@@ -30,14 +30,46 @@ test('Arán 2026: el 17/6 es inhábil', () => {
   assert.equal(r.vencimiento, '2026-06-18');
 });
 
-test('cada municipio tiene 2 fiestas locales o una anomalía documentada', () => {
+test('cada municipio tiene 2 fiestas locales, un estado de la orden o una anomalía documentada', () => {
   for (const [year, porMuni] of Object.entries(datos.locales)) {
     for (const [codigo, lista] of Object.entries(porMuni)) {
       const fechas = lista.map((f) => f.fecha);
       assert.equal(new Set(fechas).size, fechas.length, `${codigo} ${year}: fechas duplicadas`);
-      if (lista.length !== 2) assert.ok(datos.anomalias?.[codigo], `${codigo} ${year}: ${lista.length} fiestas sin anomalía documentada`);
+      assert.ok(fechas.every((f) => f.startsWith(year)), `${codigo} ${year}: fecha de otro año`);
+      const estado = datos.estado?.[year]?.[codigo];
+      if (estado) assert.equal(lista.length, 0, `${codigo} ${year}: ${estado} pero con fiestas`);
+      else if (lista.length !== 2) assert.ok(datos.anomalias?.[codigo], `${codigo} ${year}: ${lista.length} fiestas sin anomalía documentada`);
     }
   }
+  for (const [year, porNucleo] of Object.entries(datos.nucleos ?? {})) {
+    for (const [codigo, n] of Object.entries(porNucleo)) {
+      assert.ok(datos.municipios[n.municipio], `núcleo ${codigo} sin municipio`);
+      assert.ok(n.fechas.every((f) => f.fecha.startsWith(year)), `núcleo ${codigo}: fecha de otro año`);
+    }
+  }
+});
+
+test('2026: los 947 municipios de la orden del DOGC', () => {
+  assert.equal(Object.keys(datos.municipios).length, 947);
+});
+
+test('núcleo con fiestas propias: Raimat (Lleida) y Vielha', () => {
+  // Raimat: 27/4 y 24/7. Lleida: 11/5 y 29/9.
+  assert.ok(cal.motivosInhabil('2026-04-27', ['25120-001']).some((m) => m.tipo === 'local'));
+  assert.equal(cal.motivosInhabil('2026-04-27', ['25120']).length, 0);
+  assert.ok(cal.motivosInhabil('2026-05-11', ['25120']).some((m) => m.tipo === 'local'));
+  assert.equal(cal.motivosInhabil('2026-05-11', ['25120-001']).length, 0);
+  // Vielha (núcleo de Vielha e Mijaran, en Arán): 8/9 local y 17/6 Festa d'Aran.
+  assert.ok(cal.motivosInhabil('2026-09-08', ['25243-011']).some((m) => m.tipo === 'local'));
+  assert.ok(cal.motivosInhabil('2026-06-17', ['25243-011']).length > 0);
+  assert.equal(cal.nombreMunicipio('25243-011'), 'Vielha (Vielha e Mijaran)');
+});
+
+test('municipio sin propuesta: solo cuentan los festivos generales, sin aviso de datos pendientes', () => {
+  // Viladecans no formuló propuesta para 2026. 10 días hábiles desde el 1/9/2026: 2,3,4,7,8,9,10, 11 Diada, 14,15,16 -> 16/9.
+  const r = calcularPlazo({ inicio: '2026-09-01', cantidad: 10, unidad: 'dias_habiles', municipios: ['08301'] }, cal);
+  assert.equal(r.vencimiento, '2026-09-16');
+  assert.ok(!r.avisos.some((a) => a.tipo === 'sin_locales'));
 });
 
 test('12 festivos generales por año en Cataluña (sin contar sustituciones territoriales)', () => {

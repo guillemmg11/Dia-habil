@@ -42,3 +42,19 @@ export const INDEXADOS_NOMBRES = [
 ];
 const indexados = new Set(INDEXADOS_NOMBRES);
 export const esIndexado = (m) => indexados.has(m.nombre);
+
+/**
+ * Localidades que se pueden elegir en la calculadora: municipios con fiestas propias o sin
+ * propuesta, y cada núcleo con fiestas propias ("Raimat (Lleida)"). Los municipios que solo
+ * tienen fiestas por núcleo no se ofrecen como tales: hay que elegir el núcleo.
+ */
+export function listaLocalidades(datos, year = '2026') {
+  const estado = datos.estado?.[year] ?? {};
+  const out = Object.entries(datos.municipios)
+    .filter(([codigo]) => estado[codigo] !== 'solo_nucleos')
+    .map(([codigo, n]) => ({ codigo, nombre: nombreVisible(n) }));
+  for (const [codigo, n] of Object.entries(datos.nucleos?.[year] ?? {})) {
+    out.push({ codigo, nombre: `${nombreVisible(n.nombre)} (${nombreVisible(datos.municipios[n.municipio])})` });
+  }
+  return out.sort((a, b) => a.nombre.localeCompare(b.nombre, 'ca'));
+}

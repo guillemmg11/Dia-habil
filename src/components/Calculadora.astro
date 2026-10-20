@@ -1,11 +1,11 @@
 ---
 import { t } from '../i18n.js';
 import datos from '../../data/calendario.json';
-import { listaMunicipios } from '../lib/municipios.js';
+import { listaLocalidades } from '../lib/municipios.js';
 interface Props { lang: 'ca' | 'es'; cantidad?: number; unidad?: string; municipio?: string; }
 const { lang, cantidad = 10, unidad = 'dias_habiles', municipio = '' } = Astro.props;
 const s = t[lang];
-const munis = listaMunicipios(datos.municipios);
+const munis = listaLocalidades(datos);
 const muniInicial = munis.find((m) => m.codigo === municipio)?.nombre ?? '';
 ---
 <form class="calc" data-lang={lang} novalidate>
@@ -37,12 +37,12 @@ const muniInicial = munis.find((m) => m.codigo === municipio)?.nombre ?? '';
   import datos from '../../data/calendario.json';
   import { crearCalendario } from '../lib/calendario.js';
   import { calcularPlazo } from '../lib/plazos.js';
-  import { listaMunicipios } from '../lib/municipios.js';
+  import { listaLocalidades } from '../lib/municipios.js';
   import { t, fechaLarga } from '../i18n.js';
 
   const cal = crearCalendario(datos);
   const norm = (x: string) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’`´]/g, "'").toLowerCase().trim();
-  const porNombre = new Map(listaMunicipios(datos.municipios).map((m) => [norm(m.nombre), m]));
+  const porNombre = new Map(listaLocalidades(datos).map((m) => [norm(m.nombre), m]));
   const hoyLocal = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
   const etiquetaTipo = (s, tipo) => ({ sabado: '', domingo: '', estatal: s.estatal, autonomico: s.autonomico, local: s.local })[tipo] ?? '';
 
@@ -58,7 +58,7 @@ const muniInicial = munis.find((m) => m.codigo === municipio)?.nombre ?? '';
     else el('inicio').value = hoyLocal();
     if (params.get('n')) el('cantidad').value = params.get('n')!;
     if (params.get('u')) el('unidad').value = params.get('u')!;
-    const desdeCodigo = (c: string | null) => (c && datos.municipios[c as keyof typeof datos.municipios] ? [...porNombre.values()].find((m) => m.codigo === c)?.nombre ?? '' : '');
+    const desdeCodigo = (c: string | null) => (c ? [...porNombre.values()].find((m) => m.codigo === c)?.nombre ?? '' : '');
     if (params.get('m1') && desdeCodigo(params.get('m1'))) el('muni1').value = desdeCodigo(params.get('m1'));
     if (params.get('m2')) el('muni2').value = desdeCodigo(params.get('m2'));
 
@@ -95,7 +95,7 @@ const muniInicial = munis.find((m) => m.codigo === municipio)?.nombre ?? '';
         <p class="vence">${s.vence}<strong>${fechaLarga(r.vencimiento, lang)}</strong></p>
         ${r.prorrogado ? `<p>${s.prorrogado}</p>` : ''}
         ${r.avisos.map((a) => `<p class="aviso">${textoAviso(a)}</p>`).join('')}
-        ${[m1, m2].filter(Boolean).map((m) => (datos as any).anomalias?.[m!.codigo]?.[lang]).filter(Boolean).map((x) => `<p class="aviso">${x}</p>`).join('')}
+        ${[m1, m2].filter(Boolean).map((m) => (datos as any).anomalias?.[m!.codigo.split('-')[0]]?.[lang]).filter(Boolean).map((x) => `<p class="aviso">${x}</p>`).join('')}
         ${!m2 ? `<p class="nota">${s.avisoOrgano}</p>` : ''}
         <h3>${s.excluidos}</h3>
         ${r.excluidos.length ? `<table><tbody>${filas}</tbody></table>` : `<p>${s.sinExcluidos}</p>`}

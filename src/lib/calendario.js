@@ -1,4 +1,5 @@
 import { diaSemana, anio } from './fechas.js';
+import { nombreVisible } from './municipios.js';
 
 /**
  * Calendario de días inhábiles a efectos de plazos administrativos.
@@ -6,8 +7,12 @@ import { diaSemana, anio } from './fechas.js';
  * datos = {
  *   generales: { "2026": [{ fecha, nombre, ambito: "estatal" | "autonomico" }] },
  *   locales:   { "2026": { "<codigo municipio>": [{ fecha, nombre }] } },
- *   municipios: { "<codigo>": "Nombre" }
+ *   municipios: { "<codigo>": "Nombre" },
+ *   nucleos:   { "2026": { "<codigo>-<pedania>": { municipio, nombre, fechas: [{ fecha, nombre }] } } }
  * }
+ *
+ * Un código "<municipio>-<pedanía>" identifica un núcleo con fiestas locales propias,
+ * que sustituyen a las del municipio (así las fija la orden del DOGC).
  *
  * Los festivos generales ya deben venir combinados para Cataluña (los estatales que
  * Cataluña no sustituye más los autonómicos), tal como los fija la orden anual.
@@ -26,8 +31,9 @@ export function crearCalendario(datos) {
   }
 
   // Art. 30.6: el día es inhábil si lo es en cualquiera de los municipios indicados.
+  const base = (c) => (c === null ? null : String(c).split('-')[0]);
   function aplica(f, municipios) {
-    const lista = municipios.length ? municipios : [null];
+    const lista = municipios.length ? municipios.map(base) : [null];
     return lista.some((c) => {
       if (f.soloEn) return c !== null && f.soloEn.includes(c);
       if (f.excepto) return c === null || !f.excepto.includes(c);
@@ -36,7 +42,19 @@ export function crearCalendario(datos) {
   }
 
   function nombreMunicipio(codigo) {
-    return datos.municipios?.[codigo] ?? codigo;
+    if (String(codigo).includes('-')) {
+      for (const year of Object.keys(datos.nucleos ?? {})) {
+        const n = datos.nucleos[year][codigo];
+        if (n) return `${nombreVisible(n.nombre)} (${nombreVisible(datos.municipios?.[n.municipio] ?? n.municipio)})`;
+      }
+    }
+    return datos.municipios?.[codigo] ? nombreVisible(datos.municipios[codigo]) : codigo;
+  }
+
+  /** Fiestas locales de un municipio o núcleo; undefined si no hay datos de ese año. */
+  function localesDe(year, codigo) {
+    if (String(codigo).includes('-')) return datos.nucleos?.[String(year)]?.[codigo]?.fechas;
+    return datos.locales?.[String(year)]?.[codigo];
   }
 
   function tieneGenerales(year) {
@@ -44,7 +62,7 @@ export function crearCalendario(datos) {
   }
 
   function tieneLocales(year, codigo) {
-    return Boolean(datos.locales?.[String(year)]?.[codigo]);
+    return localesDe(year, codigo) !== undefined;
   }
 
   /**
@@ -66,7 +84,7 @@ export function crearCalendario(datos) {
 
     const year = String(anio(fecha));
     for (const codigo of new Set(municipios)) {
-      const locales = datos.locales?.[year]?.[codigo] ?? [];
+      const locales = localesDe(year, codigo) ?? [];
       for (const f of locales) {
         if (f.fecha === fecha) {
           motivos.push({ tipo: 'local', texto: `${f.nombre} (${nombreMunicipio(codigo)})`, municipio: codigo });
@@ -81,5 +99,5 @@ export function crearCalendario(datos) {
     return (datos.generales?.[String(year)] ?? []).filter((f) => aplica(f, [codigo]));
   }
 
-  return { motivosInhabil, tieneGenerales, tieneLocales, nombreMunicipio, generalesDe };
+  return { motivosInhabil, tieneGenerales, tieneLocales, nombreMunicipio, generalesDe, localesDe };
 }
