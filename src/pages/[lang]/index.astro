@@ -1,0 +1,18 @@
+---
+import Base from '../../layouts/Base.astro';
+import Calculadora from '../../components/Calculadora.astro';
+import { t, rutas, LANGS } from '../../i18n.js';
+export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
+const lang = Astro.params.lang as 'ca' | 'es';
+const s = t[lang];
+const title = lang === 'ca' ? 'Dia hàbil: calculadora de terminis i festius locals de Catalunya' : 'Día hábil: calculadora de plazos y festivos locales de Cataluña';
+---
+<Base lang={lang} title={title} description={s.lema} alternates={rutas.inicio}>
+  <h1>{s.lema}</h1>
+  <p class="lead">{lang === 'ca'
+    ? 'Calcula quan venç un termini administratiu tenint en compte els caps de setmana, els festius de Catalunya i les festes locals de cada municipi.'
+    : 'Calcula cuándo vence un plazo administrativo teniendo en cuenta los fines de semana, los festivos de Cataluña y las fiestas locales de cada municipio.'}</p>
+  <Calculadora lang={lang} />
+  <h2>{s.calendario}</h2>
+  <p><a href={rutas.calendario[lang](2026)}>{s.calendario} 2026</a> · <a href={rutas.calendario[lang](2027)}>{s.calendario} 2027</a></p>
+</Base>

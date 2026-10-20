@@ -1,0 +1,38 @@
+---
+import Base from '../../layouts/Base.astro';
+import { t, rutas, LANGS } from '../../i18n.js';
+export function getStaticPaths() { return LANGS.map((lang) => ({ params: { lang } })); }
+const lang = Astro.params.lang as 'ca' | 'es';
+const s = t[lang];
+---
+<Base lang={lang} title={`${s.metodologia} · ${s.marca}`} description={s.lema} alternates={rutas.metodologia}
+  breadcrumbs={[{ name: s.marca, url: rutas.inicio[lang] }, { name: s.metodologia, url: rutas.metodologia[lang] }]}>
+  <h1>{s.metodologia}</h1>
+  {lang === 'ca' ? (<>
+    <h2>D'on surten les dades</h2>
+    <ul>
+      <li>Festes locals: <a href="https://datos.gob.es/es/catalogo/a09002970-calendario-de-fiestas-locales-en-catalunya">dades obertes de la Generalitat de Catalunya</a>, contrastades amb l'ordre anual del DOGC.</li>
+      <li>Festius estatals i autonòmics: calendari laboral oficial de Catalunya i BOE.</li>
+    </ul>
+    <p>Abans de publicar cada actualització, un programa revisa les dades i assenyala anomalies, com ara municipis sense dues festes locals o files de prova dins de les dades oficials. Les anomalies es revisen a mà.</p>
+    <h2>Com calculem</h2>
+    <p>Apliquem l'article 30 de la Llei 39/2015. El càlcul es fa al teu navegador i no enviem cap dada a cap servidor. Cada canvi del càlcul passa una bateria de proves amb casos resolts a mà.</p>
+    <h2>Límits</h2>
+    <p>{s.limites}</p>
+    <h2>Qui hi ha darrere</h2>
+    <p>Aquesta web l'edita Rankova. {s.avisoDatos}</p>
+  </>) : (<>
+    <h2>De dónde salen los datos</h2>
+    <ul>
+      <li>Fiestas locales: <a href="https://datos.gob.es/es/catalogo/a09002970-calendario-de-fiestas-locales-en-catalunya">datos abiertos de la Generalitat de Catalunya</a>, contrastados con la orden anual del DOGC.</li>
+      <li>Festivos estatales y autonómicos: calendario laboral oficial de Cataluña y BOE.</li>
+    </ul>
+    <p>Antes de publicar cada actualización, un programa revisa los datos y señala anomalías, como municipios sin dos fiestas locales o filas de prueba dentro de los datos oficiales. Las anomalías se revisan a mano.</p>
+    <h2>Cómo calculamos</h2>
+    <p>Aplicamos el artículo 30 de la Ley 39/2015. El cálculo se hace en tu navegador y no enviamos ningún dato a ningún servidor. Cada cambio del cálculo pasa una batería de pruebas con casos resueltos a mano.</p>
+    <h2>Límites</h2>
+    <p>{s.limites}</p>
+    <h2>Quién está detrás</h2>
+    <p>Esta web la edita Rankova. {s.avisoDatos}</p>
+  </>)}
+</Base>

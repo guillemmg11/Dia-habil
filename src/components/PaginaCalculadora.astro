@@ -1,0 +1,38 @@
+---
+import Base from '../layouts/Base.astro';
+import Calculadora from './Calculadora.astro';
+import { t, rutas } from '../i18n.js';
+interface Props { lang: 'ca' | 'es'; }
+const { lang } = Astro.props;
+const s = t[lang];
+const title = lang === 'ca' ? 'Calculadora de terminis en dies hàbils (Catalunya)' : 'Calculadora de plazos en días hábiles (Cataluña)';
+const description = lang === 'ca'
+  ? 'Calcula la data de venciment d\'un termini administratiu en dies hàbils, naturals o mesos, amb les festes locals del teu municipi.'
+  : 'Calcula la fecha de vencimiento de un plazo administrativo en días hábiles, naturales o meses, con las fiestas locales de tu municipio.';
+const jsonld = { '@context': 'https://schema.org', '@type': 'WebApplication', name: s.calculadora, applicationCategory: 'UtilitiesApplication', operatingSystem: 'Web', inLanguage: s.locale, offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' } };
+---
+<Base lang={lang} title={title} description={description} alternates={rutas.calculadora} jsonld={jsonld}
+  breadcrumbs={[{ name: s.marca, url: rutas.inicio[lang] }, { name: s.calculadora, url: rutas.calculadora[lang] }]}>
+  <h1>{s.calculadora}</h1>
+  <p class="lead">{description}</p>
+  <Calculadora lang={lang} />
+  <h2>{lang === 'ca' ? 'Com es compta un termini' : 'Cómo se cuenta un plazo'}</h2>
+  {lang === 'ca' ? (
+    <ul>
+      <li>El termini comença a comptar l'endemà de la notificació o publicació.</li>
+      <li>En dies hàbils no compten dissabtes, diumenges ni festius.</li>
+      <li>En mesos es compta de data a data. Si el mes de venciment no té aquest dia, venç l'últim dia del mes.</li>
+      <li>Si l'últim dia és inhàbil, el termini es prorroga al primer dia hàbil següent.</li>
+      <li>És inhàbil el dia que ho sigui al municipi de la persona interessada o al de la seu de l'òrgan.</li>
+    </ul>
+  ) : (
+    <ul>
+      <li>El plazo empieza a contar el día siguiente a la notificación o publicación.</li>
+      <li>En días hábiles no cuentan sábados, domingos ni festivos.</li>
+      <li>En meses se cuenta de fecha a fecha. Si el mes de vencimiento no tiene ese día, vence el último día del mes.</li>
+      <li>Si el último día es inhábil, el plazo se prorroga al primer día hábil siguiente.</li>
+      <li>Es inhábil el día que lo sea en el municipio de la persona interesada o en el de la sede del órgano.</li>
+    </ul>
+  )}
+  <p class="nota">{lang === 'ca' ? 'Base legal: article 30 de la Llei 39/2015, d\'1 d\'octubre.' : 'Base legal: artículo 30 de la Ley 39/2015, de 1 de octubre.'} <a href={rutas.metodologia[lang]}>{s.metodologia}</a></p>
+</Base>

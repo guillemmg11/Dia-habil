@@ -1,0 +1,46 @@
+{
+  "_nota": "Datos de prueba. Festivos generales de Cataluña 2026 y 2027 y festivos locales 2026 de Barcelona y Sabadell. 2027 pendiente de contrastar con la orden del DOGC antes de usarlo en producción.",
+  "municipios": { "08019": "Barcelona", "08187": "Sabadell" },
+  "generales": {
+    "2026": [
+      { "fecha": "2026-01-01", "nombre": "Año Nuevo", "ambito": "estatal" },
+      { "fecha": "2026-01-06", "nombre": "Reyes", "ambito": "estatal" },
+      { "fecha": "2026-04-03", "nombre": "Viernes Santo", "ambito": "estatal" },
+      { "fecha": "2026-04-06", "nombre": "Lunes de Pascua", "ambito": "autonomico" },
+      { "fecha": "2026-05-01", "nombre": "Fiesta del Trabajo", "ambito": "estatal" },
+      { "fecha": "2026-06-24", "nombre": "Sant Joan", "ambito": "autonomico" },
+      { "fecha": "2026-08-15", "nombre": "Asunción", "ambito": "estatal" },
+      { "fecha": "2026-09-11", "nombre": "Diada Nacional de Catalunya", "ambito": "autonomico" },
+      { "fecha": "2026-10-12", "nombre": "Fiesta Nacional de España", "ambito": "estatal" },
+      { "fecha": "2026-12-08", "nombre": "Inmaculada Concepción", "ambito": "estatal" },
+      { "fecha": "2026-12-25", "nombre": "Navidad", "ambito": "estatal" },
+      { "fecha": "2026-12-26", "nombre": "Sant Esteve", "ambito": "autonomico" }
+    ],
+    "2027": [
+      { "fecha": "2027-01-01", "nombre": "Año Nuevo", "ambito": "estatal" },
+      { "fecha": "2027-01-06", "nombre": "Reyes", "ambito": "estatal" },
+      { "fecha": "2027-03-26", "nombre": "Viernes Santo", "ambito": "estatal" },
+      { "fecha": "2027-03-29", "nombre": "Lunes de Pascua", "ambito": "autonomico" },
+      { "fecha": "2027-05-01", "nombre": "Fiesta del Trabajo", "ambito": "estatal" },
+      { "fecha": "2027-06-24", "nombre": "Sant Joan", "ambito": "autonomico" },
+      { "fecha": "2027-09-11", "nombre": "Diada Nacional de Catalunya", "ambito": "autonomico" },
+      { "fecha": "2027-10-12", "nombre": "Fiesta Nacional de España", "ambito": "estatal" },
+      { "fecha": "2027-11-01", "nombre": "Todos los Santos", "ambito": "estatal" },
+      { "fecha": "2027-12-06", "nombre": "Día de la Constitución", "ambito": "estatal" },
+      { "fecha": "2027-12-08", "nombre": "Inmaculada Concepción", "ambito": "estatal" },
+      { "fecha": "2027-12-25", "nombre": "Navidad", "ambito": "estatal" }
+    ]
+  },
+  "locales": {
+    "2026": {
+      "08019": [
+        { "fecha": "2026-05-25", "nombre": "Segunda Pascua" },
+        { "fecha": "2026-09-24", "nombre": "La Mercè" }
+      ],
+      "08187": [
+        { "fecha": "2026-05-11", "nombre": "Fiesta local" },
+        { "fecha": "2026-09-07", "nombre": "Fiesta Mayor" }
+      ]
+    }
+  }
+}

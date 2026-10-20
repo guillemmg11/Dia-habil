@@ -1,0 +1,5 @@
+---
+import PaginaAnio from '../../../../components/PaginaAnio.astro';
+export function getStaticPaths() { return [2026, 2027].map((year) => ({ params: { year: String(year) } })); }
+---
+<PaginaAnio lang="es" year={Number(Astro.params.year)} />

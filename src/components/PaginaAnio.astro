@@ -1,0 +1,39 @@
+---
+import Base from '../layouts/Base.astro';
+import { t, rutas, fechaLarga } from '../i18n.js';
+import datos from '../../data/calendario.json';
+import { listaMunicipios } from '../lib/municipios.js';
+interface Props { lang: 'ca' | 'es'; year: number; }
+const { lang, year } = Astro.props;
+const s = t[lang];
+const generales = (datos.generales as any)[String(year)] ?? [];
+const hayLocales = Boolean((datos.locales as any)[String(year)]);
+const munis = listaMunicipios(datos.municipios);
+const title = lang === 'ca' ? `Calendari laboral ${year} a Catalunya: festius i festes locals` : `Calendario laboral ${year} en Cataluña: festivos y fiestas locales`;
+const description = lang === 'ca'
+  ? `Els festius de Catalunya per a ${year} i les festes locals de cada municipi.`
+  : `Los festivos de Cataluña para ${year} y las fiestas locales de cada municipio.`;
+---
+<Base lang={lang} title={title} description={description}
+  alternates={{ ca: rutas.calendario.ca(year), es: rutas.calendario.es(year) }}
+  breadcrumbs={[{ name: s.marca, url: rutas.inicio[lang] }, { name: `${s.calendario} ${year}`, url: rutas.calendario[lang](year) }]}>
+  <h1>{lang === 'ca' ? `Calendari laboral ${year} a Catalunya` : `Calendario laboral ${year} en Cataluña`}</h1>
+  <p class="lead">{description}</p>
+  <h2>{lang === 'ca' ? 'Festius comuns a tot Catalunya' : 'Festivos comunes en toda Cataluña'}</h2>
+  <table><tbody>{generales.map((f: any) => <tr><td>{fechaLarga(f.fecha, lang)}</td><td>{f.nombre[lang] ?? f.nombre}</td><td>{s[f.ambito as 'estatal' | 'autonomico']}</td></tr>)}</tbody></table>
+  <h2>{lang === 'ca' ? 'Festes locals per municipi' : 'Fiestas locales por municipio'}</h2>
+  {!hayLocales && <p class="aviso">{s.pendientes.replace('{y}', String(year))}</p>}
+  <label for="filtro" class="nota">{s.buscar}</label>
+  <input id="filtro" type="search" autocomplete="off" style="width:100%;padding:10px;margin:6px 0 12px;font:inherit;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)" />
+  <ul id="lista" style="columns:2;padding-left:18px">
+    {munis.map((m) => <li><a href={rutas.municipio[lang](year, m.slug)}>{m.nombre}</a></li>)}
+  </ul>
+  <script>
+    const f = document.getElementById('filtro') as HTMLInputElement;
+    const norm = (x: string) => x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    f?.addEventListener('input', () => {
+      const q = norm(f.value);
+      for (const li of document.querySelectorAll<HTMLLIElement>('#lista li')) li.hidden = !norm(li.textContent ?? '').includes(q);
+    });
+  </script>
+</Base>

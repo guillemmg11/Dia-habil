@@ -1,0 +1,7 @@
+---
+import PaginaMunicipio from '../../../../components/PaginaMunicipio.astro';
+import { rutasMunicipios } from '../../../../lib/rutas-municipios.js';
+export function getStaticPaths() { return rutasMunicipios(); }
+const { muni, year, indexado } = Astro.props;
+---
+<PaginaMunicipio lang="ca" year={year} muni={muni} indexado={indexado} />

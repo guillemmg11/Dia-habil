@@ -1,0 +1,84 @@
+---
+import { t, rutas } from '../i18n.js';
+interface Props {
+  lang: 'ca' | 'es';
+  title: string;
+  description: string;
+  alternates: { ca: string; es: string };
+  noindex?: boolean;
+  breadcrumbs?: { name: string; url: string }[];
+  jsonld?: object;
+}
+const { lang, title, description, alternates, noindex = false, breadcrumbs = [], jsonld } = Astro.props;
+const site = Astro.site!.toString().replace(/\/$/, '');
+const canonical = site + alternates[lang];
+const s = t[lang];
+const otro = lang === 'ca' ? 'es' : 'ca';
+const bcLd = breadcrumbs.length ? {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: breadcrumbs.map((b, i) => ({ '@type': 'ListItem', position: i + 1, name: b.name, item: site + b.url })),
+} : null;
+---
+<!doctype html>
+<html lang={lang}>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonical} />
+  <link rel="alternate" hreflang="ca-ES" href={site + alternates.ca} />
+  <link rel="alternate" hreflang="es-ES" href={site + alternates.es} />
+  <link rel="alternate" hreflang="x-default" href={site + alternates.es} />
+  {noindex && <meta name="robots" content="noindex, follow" />}
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:locale" content={s.locale.replace('-', '_')} />
+  {bcLd && <script type="application/ld+json" set:html={JSON.stringify(bcLd)} />}
+  {jsonld && <script type="application/ld+json" set:html={JSON.stringify(jsonld)} />}
+  <style is:global>
+    :root { --bg:#fbfaf7; --fg:#1d1d1b; --muted:#5f5e5a; --line:#e3e1db; --accent:#1f5fbf; --accent-bg:#eaf1fb; --warn:#8a5a00; --warn-bg:#fff4dc; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#161615; --fg:#ecebe7; --muted:#a8a7a2; --line:#33322f; --accent:#7fb0ff; --accent-bg:#1c2a40; --warn:#ffcf70; --warn-bg:#3a2c0f; } }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    a { color:var(--accent); }
+    header, main, footer { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+    header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding-top:16px; padding-bottom:16px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+    header .marca { font-weight:700; text-decoration:none; color:var(--fg); font-size:1.1rem; }
+    header nav { display:flex; gap:14px; flex-wrap:wrap; font-size:.95rem; }
+    main { padding-top:24px; padding-bottom:48px; }
+    h1 { font-size:1.75rem; line-height:1.2; margin:0 0 8px; }
+    h2 { font-size:1.25rem; margin:32px 0 8px; }
+    .lead { color:var(--muted); margin-top:0; }
+    .migas { font-size:.85rem; color:var(--muted); margin-bottom:12px; }
+    .migas a { color:var(--muted); }
+    table { width:100%; border-collapse:collapse; margin:8px 0; }
+    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+    .aviso { background:var(--warn-bg); color:var(--warn); padding:10px 12px; border-radius:8px; margin:12px 0; }
+    .nota { font-size:.875rem; color:var(--muted); }
+    footer { border-top:1px solid var(--line); padding-top:16px; padding-bottom:32px; font-size:.85rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="marca" href={rutas.inicio[lang]}>{s.marca}</a>
+    <nav>
+      <a href={rutas.calculadora[lang]}>{s.calculadora}</a>
+      <a href={rutas.calendario[lang](2026)}>{s.calendario}</a>
+      <a href={alternates[otro]} hreflang={otro}>{s.otroIdioma}</a>
+    </nav>
+  </header>
+  <main>
+    {breadcrumbs.length > 1 && (
+      <nav class="migas" aria-label="breadcrumb">
+        {breadcrumbs.map((b, i) => (<>{i > 0 && ' › '}{i < breadcrumbs.length - 1 ? <a href={b.url}>{b.name}</a> : <span>{b.name}</span>}</>))}
+      </nav>
+    )}
+    <slot />
+  </main>
+  <footer>
+    <p><a href={rutas.metodologia[lang]}>{s.metodologia}</a> · Rankova</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,117 @@
+---
+import { t } from '../i18n.js';
+import datos from '../../data/calendario.json';
+import { listaMunicipios } from '../lib/municipios.js';
+interface Props { lang: 'ca' | 'es'; cantidad?: number; unidad?: string; municipio?: string; }
+const { lang, cantidad = 10, unidad = 'dias_habiles', municipio = '' } = Astro.props;
+const s = t[lang];
+const munis = listaMunicipios(datos.municipios);
+const muniInicial = munis.find((m) => m.codigo === municipio)?.nombre ?? '';
+---
+<form class="calc" data-lang={lang} novalidate>
+  <div class="fila">
+    <label>{s.inicio}<input type="date" name="inicio" required /></label>
+  </div>
+  <div class="fila dos">
+    <label>{s.cantidad}<input type="number" name="cantidad" min="1" max="3650" value={cantidad} required inputmode="numeric" /></label>
+    <label>{s.unidad}
+      <select name="unidad">
+        {Object.entries(s.unidades).map(([k, v]) => <option value={k} selected={k === unidad}>{v}</option>)}
+      </select>
+    </label>
+  </div>
+  <div class="fila">
+    <label>{s.muniInteresado}<input name="muni1" list="munis" autocomplete="off" value={muniInicial} required /></label>
+  </div>
+  <div class="fila">
+    <label>{s.muniOrgano}<input name="muni2" list="munis" autocomplete="off" /></label>
+  </div>
+  <datalist id="munis">{munis.map((m) => <option value={m.nombre} />)}</datalist>
+  <button type="submit">{s.calcular}</button>
+  <p class="error" role="alert" hidden></p>
+</form>
+<section class="resultado" aria-live="polite" hidden></section>
+<p class="nota">{s.limites}</p>
+
+<script>
+  import datos from '../../data/calendario.json';
+  import { crearCalendario } from '../lib/calendario.js';
+  import { calcularPlazo } from '../lib/plazos.js';
+  import { listaMunicipios } from '../lib/municipios.js';
+  import { t, fechaLarga } from '../i18n.js';
+
+  const cal = crearCalendario(datos);
+  const porNombre = new Map(listaMunicipios(datos.municipios).map((m) => [m.nombre.toLowerCase(), m]));
+  const etiquetaTipo = (s, tipo) => ({ sabado: '', domingo: '', estatal: s.estatal, autonomico: s.autonomico, local: s.local })[tipo] ?? '';
+
+  for (const form of document.querySelectorAll<HTMLFormElement>('form.calc')) {
+    const lang = form.dataset.lang as 'ca' | 'es';
+    const s = t[lang];
+    const salida = form.nextElementSibling as HTMLElement;
+    const error = form.querySelector<HTMLElement>('.error')!;
+    const el = (n: string) => form.elements.namedItem(n) as HTMLInputElement;
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('d')) el('inicio').value = params.get('d')!;
+    else el('inicio').value = new Date().toISOString().slice(0, 10);
+    if (params.get('n')) el('cantidad').value = params.get('n')!;
+    if (params.get('u')) el('unidad').value = params.get('u')!;
+    const desdeCodigo = (c: string | null) => (c && datos.municipios[c as keyof typeof datos.municipios] ? [...porNombre.values()].find((m) => m.codigo === c)?.nombre ?? '' : '');
+    if (params.get('m1')) el('muni1').value = desdeCodigo(params.get('m1'));
+    if (params.get('m2')) el('muni2').value = desdeCodigo(params.get('m2'));
+
+    function calcular() {
+      error.hidden = true;
+      const m1 = porNombre.get(el('muni1').value.trim().toLowerCase());
+      const t2 = el('muni2').value.trim();
+      const m2 = t2 ? porNombre.get(t2.toLowerCase()) : null;
+      if (!m1 || (t2 && !m2)) { error.textContent = s.errorMuni; error.hidden = false; salida.hidden = true; return; }
+      let r;
+      try {
+        r = calcularPlazo({
+          inicio: el('inicio').value, cantidad: Number(el('cantidad').value), unidad: el('unidad').value,
+          municipios: m2 ? [m1.codigo, m2.codigo] : [m1.codigo],
+        }, cal);
+      } catch (e) { error.textContent = (e as Error).message; error.hidden = false; salida.hidden = true; return; }
+
+      const filas = r.excluidos.map((e) => `<tr><td>${fechaLarga(e.fecha, lang)}</td><td>${e.motivos.map((m) => {
+        const tipo = etiquetaTipo(s, m.tipo);
+        const dias = { ca: { sabado: 'Dissabte', domingo: 'Diumenge' }, es: { sabado: 'Sábado', domingo: 'Domingo' } }[lang];
+        const texto = m.tipo === 'local' ? m.texto.replace(/^Festiu local|^Festa local/, s.festivoLocal)
+          : m.tipo === 'sabado' || m.tipo === 'domingo' ? dias[m.tipo]
+          : (m.nombres?.[lang] ?? m.texto);
+        return tipo && m.tipo !== 'local' ? `${texto} (${tipo.toLowerCase()})` : texto;
+      }).join(', ')}</td></tr>`).join('');
+      salida.innerHTML = `
+        <p class="vence">${s.vence}<strong>${fechaLarga(r.vencimiento, lang)}</strong></p>
+        ${r.prorrogado ? `<p>${s.prorrogado}</p>` : ''}
+        ${r.avisos.map((a) => `<p class="aviso">${a.texto}</p>`).join('')}
+        <h3>${s.excluidos}</h3>
+        ${r.excluidos.length ? `<table><tbody>${filas}</tbody></table>` : `<p>${s.sinExcluidos}</p>`}
+        <button type="button" class="compartir">${s.compartir}</button>`;
+      salida.hidden = false;
+
+      const q = new URLSearchParams({ d: r.inicio, n: String(r.cantidad), u: r.unidad, m1: m1.codigo, ...(m2 ? { m2: m2.codigo } : {}) });
+      history.replaceState(null, '', `${location.pathname}?${q}`);
+      salida.querySelector<HTMLButtonElement>('.compartir')!.onclick = async (ev) => {
+        try { await navigator.clipboard.writeText(location.href); (ev.target as HTMLElement).textContent = s.copiado; } catch {}
+      };
+    }
+
+    form.addEventListener('submit', (ev) => { ev.preventDefault(); calcular(); });
+    if (params.get('d') && el('muni1').value) calcular();
+  }
+</script>
+
+<style>
+  .calc { display:grid; gap:12px; background:var(--accent-bg); padding:16px; border-radius:12px; margin:16px 0; }
+  .fila.dos { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  label { display:grid; gap:4px; font-size:.9rem; font-weight:600; }
+  input, select { font:inherit; padding:10px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg); width:100%; }
+  button { font:inherit; font-weight:600; padding:12px; border:0; border-radius:8px; background:var(--accent); color:#fff; cursor:pointer; }
+  @media (prefers-color-scheme: dark) { button { color:#0d1b30; } }
+  .error { color:#b42318; margin:0; }
+  .resultado :global(.vence) { font-size:1.15rem; }
+  .resultado :global(.vence strong) { display:block; font-size:1.5rem; }
+  .resultado :global(.compartir) { background:transparent; color:var(--accent); border:1px solid var(--accent); padding:8px 12px; margin-top:12px; }
+</style>
