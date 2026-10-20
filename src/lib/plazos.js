@@ -23,12 +23,13 @@ import { sumarDias, sumarMeses, anio, parse } from './fechas.js';
  */
 export function calcularPlazo(opciones, calendario) {
   const { inicio, cantidad, unidad, municipios = [] } = opciones;
+  const LIMITES = { dias_habiles: 365, dias_naturales: 730, meses: 60, anos: 10 };
+  if (!(unidad in LIMITES)) throw new Error(`Unidad no válida: ${unidad}`);
   parse(inicio);
-  if (!Number.isInteger(cantidad) || cantidad <= 0 || cantidad > 3650) {
-    throw new Error('La cantidad debe ser un número entero entre 1 y 3650');
+  if (anio(inicio) < 2000 || anio(inicio) > 2100) throw new Error('La fecha debe estar entre los años 2000 y 2100');
+  if (!Number.isInteger(cantidad) || cantidad <= 0 || cantidad > LIMITES[unidad]) {
+    throw new Error(`La cantidad debe ser un número entero entre 1 y ${LIMITES[unidad]}`);
   }
-  const unidades = ['dias_habiles', 'dias_naturales', 'meses', 'anos'];
-  if (!unidades.includes(unidad)) throw new Error(`Unidad no válida: ${unidad}`);
 
   const excluidos = [];
   const inicioComputo = sumarDias(inicio, 1);
@@ -64,20 +65,18 @@ export function calcularPlazo(opciones, calendario) {
 
   // Avisos de datos incompletos: un año sin festivos generales cargados, o un municipio
   // sin festivos locales para algún año del cómputo.
+  // Agrupados por año: como mucho un aviso de cada tipo y año.
   const avisos = [];
   for (let y = anio(inicioComputo); y <= anio(vencimiento); y++) {
-    if (!calendario.tieneGenerales(y)) {
-      avisos.push({ tipo: 'sin_generales', anio: y, texto: `No hay festivos generales cargados para ${y}.` });
-    }
-    for (const codigo of new Set(municipios)) {
-      if (!calendario.tieneLocales(y, codigo)) {
-        avisos.push({
-          tipo: 'sin_locales', anio: y, municipio: codigo,
-          texto: `Aún no hay festivos locales de ${calendario.nombreMunicipio(codigo)} para ${y}. El resultado podría cambiar cuando se publiquen.`,
-        });
-      }
+    if (!calendario.tieneGenerales(y)) avisos.push({ tipo: 'sin_generales', anio: y });
+    const sinLocales = [...new Set(municipios)].filter((c) => !calendario.tieneLocales(y, c));
+    if (sinLocales.length) {
+      avisos.push({ tipo: 'sin_locales', anio: y, municipios: sinLocales, nombres: sinLocales.map((c) => calendario.nombreMunicipio(c)) });
     }
   }
+  // El recurso contencioso-administrativo (2 meses, art. 46 LJCA) se rige por reglas procesales
+  // (agosto y del 24/12 al 6/1 inhábiles, art. 128.2 LJCA y art. 183 LOPJ): este cálculo no vale.
+  if (unidad === 'meses') avisos.push({ tipo: 'contencioso' });
 
   return { inicio, inicioComputo, cantidad, unidad, vencimientoTeorico, vencimiento, prorrogado, excluidos, avisos };
 }

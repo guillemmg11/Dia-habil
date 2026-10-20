@@ -69,13 +69,20 @@ for (const f of filas) {
   if (/\bprueba\d*\b|\btest\b/i.test(festiu)) { informe.descartadasPrueba.push(`${nombre}: ${festiu}`); continue; }
   const fecha = normalizarFecha(f[col.data].trim());
   if (!fecha || !fecha.startsWith(anio)) { informe.descartadasFecha.push(`${nombre}: ${f[col.data]}`); continue; }
-  if (f[col.pedania].trim() !== '000') { informe.pedanias++; continue; }
+  if (f[col.pedania].trim() !== '000') { informe.pedanias++; (informe.soloNucleo ??= new Map()).set(f[col.ine].trim().padStart(5, '0'), nombre); continue; }
   const ine = f[col.ine].trim().padStart(5, '0');
   municipios[ine] = nombre;
   (locales[ine] ??= []).push({ fecha, nombre: festiu });
 }
 
-for (const lista of Object.values(locales)) lista.sort((a, b) => a.fecha.localeCompare(b.fecha));
+const duplicadas = [];
+for (const [ine, lista] of Object.entries(locales)) {
+  lista.sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const unicas = lista.filter((f, i) => i === 0 || f.fecha !== lista[i - 1].fecha);
+  if (unicas.length !== lista.length) duplicadas.push(`${municipios[ine]} (${ine})`);
+  locales[ine] = unicas;
+}
+const sinFilaMunicipal = [...(informe.soloNucleo ?? new Map())].filter(([ine]) => !locales[ine]).map(([ine, n]) => `${n} (${ine})`);
 const anomalos = Object.entries(locales).filter(([, l]) => l.length !== 2)
   .map(([ine, l]) => `${municipios[ine]} (${ine}): ${l.length} festivos`);
 
@@ -84,5 +91,7 @@ console.error(`Descartadas por ser de prueba: ${informe.descartadasPrueba.length
 console.error(`Descartadas por fecha incoherente: ${informe.descartadasFecha.length}`, informe.descartadasFecha.slice(0, 10));
 console.error(`Núcleos con pedanía propia (no publicados en la v1): ${informe.pedanias}`);
 console.error(`Municipios con un número de festivos distinto de 2: ${anomalos.length}`, anomalos.slice(0, 20));
+console.error(`Municipios con fechas duplicadas (corregidas): ${duplicadas.length}`, duplicadas);
+console.error(`Municipios que solo aparecen como núcleo, sin fila municipal (no publicados): ${sinFilaMunicipal.length}`, sinFilaMunicipal);
 
 process.stdout.write(JSON.stringify({ anio: Number(anio), municipios, locales }, null, 2));

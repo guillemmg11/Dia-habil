@@ -13,9 +13,26 @@ import { diaSemana, anio } from './fechas.js';
  * Cataluña no sustituye más los autonómicos), tal como los fija la orden anual.
  */
 export function crearCalendario(datos) {
+  // Un festivo general puede llevar excepciones territoriales (p. ej. la Val d'Aran):
+  //   excepto: [códigos]  no es festivo en esos municipios
+  //   soloEn:  [códigos]  solo es festivo en esos municipios
   const generales = new Map();
   for (const [year, lista] of Object.entries(datos.generales ?? {})) {
-    for (const f of lista) generales.set(f.fecha, { ...f, year: Number(year) });
+    for (const f of lista) {
+      const lista2 = generales.get(f.fecha) ?? [];
+      lista2.push({ ...f, year: Number(year) });
+      generales.set(f.fecha, lista2);
+    }
+  }
+
+  // Art. 30.6: el día es inhábil si lo es en cualquiera de los municipios indicados.
+  function aplica(f, municipios) {
+    const lista = municipios.length ? municipios : [null];
+    return lista.some((c) => {
+      if (f.soloEn) return c !== null && f.soloEn.includes(c);
+      if (f.excepto) return c === null || !f.excepto.includes(c);
+      return true;
+    });
   }
 
   function nombreMunicipio(codigo) {
@@ -42,8 +59,10 @@ export function crearCalendario(datos) {
     if (dow === 0) motivos.push({ tipo: 'domingo', texto: 'Domingo' });
 
     // nombre puede ser una cadena o { ca, es }.
-    const g = generales.get(fecha);
-    if (g) motivos.push({ tipo: g.ambito, texto: typeof g.nombre === 'string' ? g.nombre : g.nombre.es, nombres: typeof g.nombre === 'string' ? null : g.nombre });
+    for (const g of generales.get(fecha) ?? []) {
+      if (!aplica(g, [...new Set(municipios)])) continue;
+      motivos.push({ tipo: g.ambito, texto: typeof g.nombre === 'string' ? g.nombre : g.nombre.es, nombres: typeof g.nombre === 'string' ? null : g.nombre });
+    }
 
     const year = String(anio(fecha));
     for (const codigo of new Set(municipios)) {
@@ -57,5 +76,10 @@ export function crearCalendario(datos) {
     return motivos;
   }
 
-  return { motivosInhabil, tieneGenerales, tieneLocales, nombreMunicipio };
+  /** Festivos generales que aplican en un municipio concreto (para las páginas de municipio). */
+  function generalesDe(year, codigo) {
+    return (datos.generales?.[String(year)] ?? []).filter((f) => aplica(f, [codigo]));
+  }
+
+  return { motivosInhabil, tieneGenerales, tieneLocales, nombreMunicipio, generalesDe };
 }

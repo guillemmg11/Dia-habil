@@ -6,7 +6,7 @@ import { listaMunicipios } from '../lib/municipios.js';
 interface Props { lang: 'ca' | 'es'; year: number; }
 const { lang, year } = Astro.props;
 const s = t[lang];
-const generales = (datos.generales as any)[String(year)] ?? [];
+const generales = ((datos.generales as any)[String(year)] ?? []).filter((f: any) => !f.soloEn);
 const hayLocales = Boolean((datos.locales as any)[String(year)]);
 const munis = listaMunicipios(datos.municipios);
 const title = lang === 'ca' ? `Calendari laboral ${year} a Catalunya: festius i festes locals` : `Calendario laboral ${year} en Cataluña: festivos y fiestas locales`;
@@ -20,7 +20,7 @@ const description = lang === 'ca'
   <h1>{lang === 'ca' ? `Calendari laboral ${year} a Catalunya` : `Calendario laboral ${year} en Cataluña`}</h1>
   <p class="lead">{description}</p>
   <h2>{lang === 'ca' ? 'Festius comuns a tot Catalunya' : 'Festivos comunes en toda Cataluña'}</h2>
-  <table><tbody>{generales.map((f: any) => <tr><td>{fechaLarga(f.fecha, lang)}</td><td>{f.nombre[lang] ?? f.nombre}</td><td>{s[f.ambito as 'estatal' | 'autonomico']}</td></tr>)}</tbody></table>
+  <table><tbody>{generales.map((f: any) => <tr><td>{fechaLarga(f.fecha, lang)}</td><td>{f.nombre[lang] ?? f.nombre}</td><td>{s[f.ambito as 'estatal' | 'autonomico']}{f.excepto ? (lang === 'ca' ? " (a l'Aran se substitueix pel 17 de juny)" : ' (en Arán se sustituye por el 17 de junio)') : ''}</td></tr>)}</tbody></table>
   <h2>{lang === 'ca' ? 'Festes locals per municipi' : 'Fiestas locales por municipio'}</h2>
   {!hayLocales && <p class="aviso">{s.pendientes.replace('{y}', String(year))}</p>}
   <label for="filtro" class="nota">{s.buscar}</label>
