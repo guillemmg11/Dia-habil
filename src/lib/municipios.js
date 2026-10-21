@@ -39,6 +39,8 @@ export const INDEXADOS_NOMBRES = [
   'Molins de Rei', 'Esplugues de Llobregat', 'Granollers', 'Vic', 'Igualada', 'Figueres',
   'Blanes', 'Lloret de Mar', 'Sitges', 'Cambrils', 'Salou', 'El Vendrell', 'Tortosa',
   'Sant Adrià de Besòs', 'Ripollet', 'Montcada i Reixac', 'Santa Coloma de Gramenet', 'Olot',
+  // Añadidos por interés en Google Trends (octubre 2026) y población.
+  'Sant Just Desvern', 'Barberà del Vallès', 'Viladecans', 'Cerdanyola del Vallès',
 ];
 const indexados = new Set(INDEXADOS_NOMBRES);
 export const esIndexado = (m) => indexados.has(m.nombre);

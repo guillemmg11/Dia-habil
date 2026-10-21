@@ -1,39 +1,96 @@
 ---
 import Base from '../layouts/Base.astro';
-import { t, rutas, fechaLarga } from '../i18n.js';
+import Anuncio from './Anuncio.astro';
+import { t, rutas } from '../i18n.js';
 import datos from '../../data/calendario.json';
-import { listaMunicipios } from '../lib/municipios.js';
+import { listaMunicipios, esIndexado } from '../lib/municipios.js';
+import { sumarDias, diaSemana } from '../lib/fechas.js';
 interface Props { lang: 'ca' | 'es'; year: number; }
 const { lang, year } = Astro.props;
 const s = t[lang];
+const ca = lang === 'ca';
 const generales = ((datos.generales as any)[String(year)] ?? []).filter((f: any) => !f.soloEn);
-const hayLocales = Boolean((datos.locales as any)[String(year)]);
+const oficiales = Boolean((datos.locales as any)[String(year)]);
 const munis = listaMunicipios(datos.municipios);
-const title = lang === 'ca' ? `Calendari laboral ${year} a Catalunya: festius i festes locals` : `Calendario laboral ${year} en Cataluña: festivos y fiestas locales`;
-const description = lang === 'ca'
-  ? `Els festius de Catalunya per a ${year} i les festes locals de cada municipi.`
-  : `Los festivos de Cataluña para ${year} y las fiestas locales de cada municipio.`;
+const populares = munis.filter(esIndexado);
+const otroAnio = year === 2026 ? 2027 : 2026;
+const fmtCorto = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString(s.locale, { day: 'numeric', month: 'long', timeZone: 'UTC' });
+const fmtSemana = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString(s.locale, { weekday: 'long', timeZone: 'UTC' });
+const entreSemana = generales.filter((f: any) => ![0, 6].includes(diaSemana(f.fecha)));
+const puentes = entreSemana.filter((f: any) => [2, 4].includes(diaSemana(f.fecha)))
+  .map((f: any) => ({ festivo: f, dia: sumarDias(f.fecha, diaSemana(f.fecha) === 2 ? -1 : 1) }));
+const nombre = (f: any) => f.nombre[lang] ?? f.nombre;
+
+const title = ca ? `Festius Catalunya ${year}: calendari laboral, ponts i festes locals` : `Festivos Cataluña ${year}: calendario laboral, puentes y fiestas locales`;
+const description = ca
+  ? `Els ${generales.length} festius de Catalunya el ${year}, els ponts i les festes locals dels ${munis.length} municipis.`
+  : `Los ${generales.length} festivos de Cataluña en ${year}, los puentes y las fiestas locales de los ${munis.length} municipios.`;
+const resumen = ca
+  ? `El ${year} hi ha ${generales.length} festius comuns a tot Catalunya, ${entreSemana.length} dels quals cauen entre setmana. Cada municipi hi afegeix dues festes locals, que trobaràs a la seva pàgina.`
+  : `En ${year} hay ${generales.length} festivos comunes en toda Cataluña, ${entreSemana.length} de ellos entre semana. Cada municipio añade dos fiestas locales, que encontrarás en su página.`;
 ---
 <Base lang={lang} title={title} description={description}
   alternates={{ ca: rutas.calendario.ca(year), es: rutas.calendario.es(year) }}
-  breadcrumbs={[{ name: s.marca, url: rutas.inicio[lang] }, { name: `${s.calendario} ${year}`, url: rutas.calendario[lang](year) }]}>
-  <h1>{lang === 'ca' ? `Calendari laboral ${year} a Catalunya` : `Calendario laboral ${year} en Cataluña`}</h1>
-  <p class="lead">{description}</p>
-  <h2>{lang === 'ca' ? 'Festius comuns a tot Catalunya' : 'Festivos comunes en toda Cataluña'}</h2>
-  <table><tbody>{generales.map((f: any) => <tr><td>{fechaLarga(f.fecha, lang)}</td><td>{f.nombre[lang] ?? f.nombre}</td><td>{s[f.ambito as 'estatal' | 'autonomico']}{f.excepto ? (lang === 'ca' ? " (a l'Aran se substitueix pel 17 de juny)" : ' (en Arán se sustituye por el 17 de junio)') : ''}</td></tr>)}</tbody></table>
-  <h2>{lang === 'ca' ? 'Festes locals per municipi' : 'Fiestas locales por municipio'}</h2>
-  {!hayLocales && <p class="aviso">{s.pendientes.replace('{y}', String(year))}</p>}
-  <label for="filtro" class="nota">{s.buscar}</label>
-  <input id="filtro" type="search" autocomplete="off" style="width:100%;padding:10px;margin:6px 0 12px;font:inherit;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)" />
-  <ul id="lista" style="columns:2;padding-left:18px">
-    {munis.map((m) => <li><a href={rutas.municipio[lang](year, m.slug)}>{m.nombre}</a></li>)}
-  </ul>
+  breadcrumbs={[{ name: s.marca, url: rutas.inicio[lang] }, { name: ca ? `Festius ${year}` : `Festivos ${year}`, url: rutas.calendario[lang](year) }]}>
+  <h1>{ca ? `Festius de Catalunya ${year}` : `Festivos en Cataluña ${year}`}</h1>
+  <p class="lead">{resumen}</p>
+  <p class="otros-anios"><a href={rutas.calendario[lang](otroAnio)}>{ca ? `Festius de Catalunya ${otroAnio}` : `Festivos en Cataluña ${otroAnio}`}</a></p>
+
+  <section aria-labelledby="buscar">
+    <h2 id="buscar">{ca ? 'Busca els festius del teu municipi' : 'Busca los festivos de tu municipio'}</h2>
+    {!oficiales && <p class="aviso">{ca
+      ? `Les festes locals de ${year} es publiquen al DOGC cap a desembre. Mentrestant mostrem les que ja han aprovat els ajuntaments, marcades com a provisionals.`
+      : `Las fiestas locales de ${year} se publican en el DOGC hacia diciembre. Mientras tanto mostramos las que ya han aprobado los ayuntamientos, marcadas como provisionales.`}</p>}
+    <label for="filtro" class="etiqueta">{ca ? 'Escriu el nom del municipi' : 'Escribe el nombre del municipio'}</label>
+    <input id="filtro" type="search" autocomplete="off" placeholder={ca ? 'Per exemple, Terrassa' : 'Por ejemplo, Terrassa'} />
+    <ul id="lista" class="munis" hidden>
+      {munis.map((m) => <li><a href={rutas.municipio[lang](year, m.slug)}>{m.nombre}</a></li>)}
+    </ul>
+    <h3>{ca ? 'Municipis més consultats' : 'Municipios más consultados'}</h3>
+    <ul class="munis">{populares.map((m) => <li><a href={rutas.municipio[lang](year, m.slug)}>{m.nombre}</a></li>)}</ul>
+  </section>
+
+  <section aria-labelledby="generales">
+    <h2 id="generales">{ca ? `Festius comuns a tot Catalunya el ${year}` : `Festivos comunes en toda Cataluña en ${year}`}</h2>
+    <table><thead><tr><th>{ca ? 'Data' : 'Fecha'}</th><th>{ca ? 'Festiu' : 'Festivo'}</th><th>{ca ? 'Tipus' : 'Tipo'}</th></tr></thead>
+    <tbody>{generales.map((f: any) => <tr><td class="fecha"><strong>{fmtCorto(f.fecha)}</strong><span>{fmtSemana(f.fecha)}</span></td><td>{nombre(f)}{f.excepto ? (ca ? " (a l'Aran se substitueix pel 17 de juny)" : ' (en Arán se sustituye por el 17 de junio)') : ''}</td><td>{s[f.ambito as 'estatal' | 'autonomico']}</td></tr>)}</tbody></table>
+  </section>
+
+  <Anuncio lang={lang} alto={250} />
+
+  <section aria-labelledby="puentes">
+    <h2 id="puentes">{ca ? `Ponts ${year} a Catalunya` : `Puentes ${year} en Cataluña`}</h2>
+    {puentes.length ? <ul class="puentes">{puentes.map((p: any) => <li><strong>{fmtSemana(p.dia)}, {fmtCorto(p.dia)}</strong><span>{ca ? 'Pont de: ' : 'Puente de: '}{nombre(p.festivo)} ({fmtCorto(p.festivo.fecha)})</span></li>)}</ul>
+      : <p>{ca ? `Cap festiu comú cau en dimarts o dijous el ${year}.` : `Ningún festivo común cae en martes o jueves en ${year}.`}</p>}
+    <p class="nota">{ca ? 'Les festes locals poden afegir ponts propis: mira la pàgina del teu municipi. Un pont no és festiu oficial i, per als terminis administratius, és un dia hàbil.' : 'Las fiestas locales pueden añadir puentes propios: mira la página de tu municipio. Un puente no es festivo oficial y, para los plazos administrativos, es un día hábil.'}</p>
+  </section>
+
+  <p class="nota">{s.fuente}: {ca ? 'BOE i DOGC (festius generals); DOGC i ajuntaments (festes locals).' : 'BOE y DOGC (festivos generales); DOGC y ayuntamientos (fiestas locales).'}</p>
+
   <script>
     const f = document.getElementById('filtro') as HTMLInputElement;
+    const lista = document.getElementById('lista')!;
     const norm = (x: string) => x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
     f?.addEventListener('input', () => {
-      const q = norm(f.value);
-      for (const li of document.querySelectorAll<HTMLLIElement>('#lista li')) li.hidden = !norm(li.textContent ?? '').includes(q);
+      const q = norm(f.value.trim());
+      lista.hidden = q.length < 2;
+      for (const li of lista.querySelectorAll<HTMLLIElement>('li')) li.hidden = !norm(li.textContent ?? '').includes(q);
     });
   </script>
 </Base>
+<style>
+  .otros-anios { font-weight:700; }
+  .etiqueta { display:block; font-weight:700; margin:8px 0 6px; }
+  #filtro { font:inherit; font-size:1.05rem; padding:12px 14px; border:1.5px solid #9a9a9a; border-radius:10px; width:100%; max-width:520px; min-height:50px; }
+  #filtro:focus { border-color:var(--azul); outline:3px solid var(--azul-claro); }
+  .munis { list-style:none; padding:0; margin:16px 0; columns:4 180px; column-gap:28px; }
+  .munis li { padding:5px 0; break-inside:avoid; }
+  .munis a { color:var(--ink); }
+  #lista { border:1px solid var(--line); border-radius:10px; padding:8px 16px; max-height:320px; overflow:auto; }
+  .fecha strong { display:block; }
+  .fecha span { color:var(--ink-3); font-size:.9rem; }
+  .fecha span::first-letter, .puentes strong::first-letter { text-transform:uppercase; }
+  .puentes { list-style:none; padding:0; margin:12px 0; border-top:2px solid var(--ink); max-width:var(--texto); }
+  .puentes li { padding:10px 0; border-bottom:1px solid var(--line); display:grid; }
+  .puentes span { color:var(--ink-3); font-size:.92rem; }
+</style>

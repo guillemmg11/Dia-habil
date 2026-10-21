@@ -109,7 +109,7 @@ const jsonld = {
       ? `Calendari laboral de ${nMunis} municipis i ${nNucleos} nuclis de Catalunya, amb les festes locals publicades al DOGC.`
       : `Calendario laboral de ${nMunis} municipios y ${nNucleos} núcleos de Cataluña, con las fiestas locales publicadas en el DOGC.`}</p>
     <ul class="munis">{populares.map((m) => <li><a href={rutas.municipio[lang](2026, m.slug)}>{m.nombre}</a></li>)}</ul>
-    <p><a class="enlace-fuerte" href={rutas.calendario[lang](2026)}>{ca ? `Veure tots els municipis` : `Ver todos los municipios`}</a></p>
+    <p class="enlaces-anio"><a class="enlace-fuerte" href={rutas.calendario[lang](2026)}>{ca ? 'Festius de Catalunya 2026' : 'Festivos en Cataluña 2026'}</a> <a class="enlace-fuerte" href={rutas.calendario[lang](2027)}>{ca ? 'Festius de Catalunya 2027' : 'Festivos en Cataluña 2027'}</a></p>
   </section>
 
   <section aria-labelledby="preguntas">
@@ -141,6 +141,7 @@ const jsonld = {
   .munis li { padding:5px 0; break-inside:avoid; }
   .munis a { color:var(--ink); }
   .enlace-fuerte { font-weight:700; }
+  .enlaces-anio { display:flex; gap:12px 28px; flex-wrap:wrap; }
   .faq { border-top:1px solid var(--line); max-width:var(--texto); }
   .faq details { border-bottom:1px solid var(--line); padding:4px 0; }
   .faq summary { cursor:pointer; font-weight:700; font-size:1.08rem; padding:12px 0; list-style:none; display:flex; justify-content:space-between; gap:16px; }

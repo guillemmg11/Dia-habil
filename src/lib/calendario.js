@@ -54,7 +54,14 @@ export function crearCalendario(datos) {
   /** Fiestas locales de un municipio o núcleo; undefined si no hay datos de ese año. */
   function localesDe(year, codigo) {
     if (String(codigo).includes('-')) return datos.nucleos?.[String(year)]?.[codigo]?.fechas;
-    return datos.locales?.[String(year)]?.[codigo];
+    return datos.locales?.[String(year)]?.[codigo] ?? datos.provisionales?.[String(year)]?.[codigo]?.fechas;
+  }
+
+  /** Fiestas locales aprobadas por el ayuntamiento pero aún no publicadas en el DOGC. */
+  function esProvisional(year, codigo) {
+    const c = String(codigo);
+    if (c.includes('-')) return false;
+    return !datos.locales?.[String(year)]?.[c] && Boolean(datos.provisionales?.[String(year)]?.[c]);
   }
 
   function tieneGenerales(year) {
@@ -99,5 +106,5 @@ export function crearCalendario(datos) {
     return (datos.generales?.[String(year)] ?? []).filter((f) => aplica(f, [codigo]));
   }
 
-  return { motivosInhabil, tieneGenerales, tieneLocales, nombreMunicipio, generalesDe, localesDe };
+  return { motivosInhabil, tieneGenerales, tieneLocales, esProvisional, nombreMunicipio, generalesDe, localesDe };
 }

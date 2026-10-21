@@ -36,10 +36,11 @@ La fuente principal es la orden anual de fiestas locales del DOGC. Los datos abi
 7. Incorporar `municipios`, `locales`, `estado` y `nucleos` del año a `data/calendario.json`, y documentar en `anomalias` cualquier municipio con un número de fiestas distinto de 2.
 8. Añadir a `generales` los festivos estatales y autonómicos del año siguiente, con nombre en `ca` y `es` y sus excepciones territoriales (Val d'Aran).
 
-## Estado de los datos (20/10/2026)
+## Estado de los datos (21/10/2026)
 
 - Festivos generales 2026 (Ordre EMT/66/2025) y 2027 (Ordre EMT/52/2026), con la sustitución del 17 de junio en la Val d'Aran. Falta cotejar el texto literal de Arán en el DOGC.
 - Festivos locales 2026: los 947 municipios y 409 núcleos de la Ordre EMT/208/2025 (DOGC 9565). 30 ayuntamientos sin propuesta y 31 municipios con fiestas solo por núcleo. 9 municipios sin código INE en los datos abiertos llevan una clave provisional `dogc-*`.
 - Contraste con los datos abiertos: 868 municipios idénticos fecha a fecha. Los datos abiertos omiten 77 municipios y atribuyen a Avinyonet del Penedès las fiestas de un núcleo.
 - Aplicada la Ordre EMT/3/2026 (DOGC 9586, 20/01/2026): 10 municipios modificados (data/modificaciones-2026.json).
-- Festivos locales 2027: pendientes de publicación.
+- Festivos locales 2027: la orden del DOGC sale hacia diciembre. Mientras tanto, `data/provisionales-2027.json` recoge las fiestas ya aprobadas por 11 ayuntamientos (con su fuente), cargadas con `node scripts/cargar-provisionales.js data/provisionales-2027.json 2027`. Se muestran como provisionales y solo esas páginas de 2027 se indexan. Al publicarse la orden, se cargan los datos oficiales, que tienen prioridad.
+- Rutas: `/es/festivos/` y `/ca/festius/` (antes `/calendario-laboral/` y `/calendari-laboral/`, redirigidas con 301 en nginx). La portada en castellano está en `/` y `/es/` redirige allí.

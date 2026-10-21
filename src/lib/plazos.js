@@ -73,6 +73,10 @@ export function calcularPlazo(opciones, calendario) {
     if (sinLocales.length) {
       avisos.push({ tipo: 'sin_locales', anio: y, municipios: sinLocales, nombres: sinLocales.map((c) => calendario.nombreMunicipio(c)) });
     }
+    const provisionales = [...new Set(municipios)].filter((c) => calendario.esProvisional?.(y, c));
+    if (provisionales.length) {
+      avisos.push({ tipo: 'provisional', anio: y, municipios: provisionales, nombres: provisionales.map((c) => calendario.nombreMunicipio(c)) });
+    }
   }
   // El recurso contencioso-administrativo (2 meses, art. 46 LJCA) se rige por reglas procesales
   // (agosto y del 24/12 al 6/1 inhábiles, art. 128.2 LJCA y art. 183 LOPJ): este cálculo no vale.

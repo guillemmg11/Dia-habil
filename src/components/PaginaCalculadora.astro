@@ -5,7 +5,7 @@ import { t, rutas } from '../i18n.js';
 interface Props { lang: 'ca' | 'es'; }
 const { lang } = Astro.props;
 const s = t[lang];
-const title = lang === 'ca' ? 'Calculadora de terminis en dies hàbils (Catalunya)' : 'Calculadora de plazos en días hábiles (Cataluña)';
+const title = lang === 'ca' ? 'Calculadora de dies hàbils: terminis administratius a Catalunya' : 'Calculadora de días hábiles: plazos administrativos en Cataluña';
 const description = lang === 'ca'
   ? 'Calcula la data de venciment d\'un termini administratiu en dies hàbils, naturals o mesos, amb les festes locals del teu municipi.'
   : 'Calcula la fecha de vencimiento de un plazo administrativo en días hábiles, naturales o meses, con las fiestas locales de tu municipio.';
@@ -13,7 +13,7 @@ const jsonld = { '@context': 'https://schema.org', '@type': 'WebApplication', na
 ---
 <Base lang={lang} title={title} description={description} alternates={rutas.calculadora} jsonld={jsonld}
   breadcrumbs={[{ name: s.marca, url: rutas.inicio[lang] }, { name: s.calculadora, url: rutas.calculadora[lang] }]}>
-  <h1>{s.calculadora}</h1>
+  <h1>{lang === 'ca' ? 'Calculadora de dies hàbils' : 'Calculadora de días hábiles'}</h1>
   <p class="lead">{description}</p>
   <Calculadora lang={lang} />
   <h2>{lang === 'ca' ? 'Com es compta un termini' : 'Cómo se cuenta un plazo'}</h2>

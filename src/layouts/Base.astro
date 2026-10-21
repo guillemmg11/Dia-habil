@@ -126,8 +126,8 @@ const bcLd = breadcrumbs.length ? {
         <h2>{lang === 'ca' ? 'Eines' : 'Herramientas'}</h2>
         <ul>
           <li><a href={rutas.calculadora[lang]}>{s.calculadora}</a></li>
-          <li><a href={rutas.calendario[lang](2026)}>{s.calendario} 2026</a></li>
-          <li><a href={rutas.calendario[lang](2027)}>{s.calendario} 2027</a></li>
+          <li><a href={rutas.calendario[lang](2026)}>{lang === 'ca' ? 'Festius 2026' : 'Festivos 2026'}</a></li>
+          <li><a href={rutas.calendario[lang](2027)}>{lang === 'ca' ? 'Festius 2027' : 'Festivos 2027'}</a></li>
           <li><a href={rutas.metodologia[lang]}>{s.metodologia}</a></li>
         </ul>
       </nav>

@@ -99,6 +99,7 @@ const textoAtajo = (n: number, u: string) => n === 1 && u === 'meses' ? (lang ==
 
     function textoAviso(a: any) {
       if (a.tipo === 'sin_locales') return s.avisoSinLocales.replace('{m}', a.nombres.join(', ')).replace('{y}', a.anio);
+      if (a.tipo === 'provisional') return s.avisoProvisional.replace('{m}', a.nombres.join(', ')).replace('{y}', a.anio);
       if (a.tipo === 'sin_generales') return s.avisoSinGenerales.replace('{y}', a.anio);
       if (a.tipo === 'contencioso') return s.avisoContencioso;
       return '';

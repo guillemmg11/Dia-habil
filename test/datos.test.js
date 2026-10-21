@@ -100,3 +100,23 @@ test('avisos: contencioso en meses, agrupados por año y límites por unidad', (
   assert.throws(() => calcularPlazo({ inicio: '2026-01-10', cantidad: 11, unidad: 'anos', municipios: [BCN] }, cal));
   assert.throws(() => calcularPlazo({ inicio: '9999-12-30', cantidad: 1, unidad: 'dias_habiles', municipios: [BCN] }, cal));
 });
+
+test('fiestas locales provisionales de 2027 (ayuntamientos, pendientes del DOGC)', () => {
+  const cal = crearCalendario(datos);
+  // Barcelona: 17/5/2027 (Segona Pasqua) es inhábil y el cálculo avisa de que es provisional.
+  assert.ok(cal.motivosInhabil('2027-05-17', ['08019']).some((m) => m.tipo === 'local'));
+  assert.ok(cal.esProvisional(2027, '08019'));
+  assert.ok(!cal.esProvisional(2026, '08019'));
+  const r = calcularPlazo({ inicio: '2027-05-10', cantidad: 10, unidad: 'dias_habiles', municipios: ['08019'] }, cal);
+  assert.ok(r.avisos.some((a) => a.tipo === 'provisional'));
+  assert.ok(!r.avisos.some((a) => a.tipo === 'sin_locales'));
+  // Un municipio sin datos de 2027 sigue avisando de que faltan.
+  const r2 = calcularPlazo({ inicio: '2027-05-10', cantidad: 10, unidad: 'dias_habiles', municipios: ['17001'] }, cal);
+  assert.ok(r2.avisos.some((a) => a.tipo === 'sin_locales'));
+  // Todas las fechas provisionales son de 2027 y hay dos por municipio.
+  for (const [c, p] of Object.entries(datos.provisionales['2027'])) {
+    assert.equal(p.fechas.length, 2, c);
+    assert.ok(p.fechas.every((f) => f.fecha.startsWith('2027-')), c);
+    assert.match(p.fuente, /^https:\/\//);
+  }
+});

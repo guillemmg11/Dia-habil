@@ -3,8 +3,8 @@ export const LANGS = ['ca', 'es'];
 export const rutas = {
   inicio: { ca: '/ca/', es: '/' },
   calculadora: { ca: '/ca/calculadora-terminis/', es: '/es/calculadora-plazos/' },
-  calendario: { ca: (y) => `/ca/calendari-laboral/${y}/`, es: (y) => `/es/calendario-laboral/${y}/` },
-  municipio: { ca: (y, s) => `/ca/calendari-laboral/${y}/${s}/`, es: (y, s) => `/es/calendario-laboral/${y}/${s}/` },
+  calendario: { ca: (y) => `/ca/festius/${y}/`, es: (y) => `/es/festivos/${y}/` },
+  municipio: { ca: (y, s) => `/ca/festius/${y}/${s}/`, es: (y, s) => `/es/festivos/${y}/${s}/` },
   metodologia: { ca: '/ca/metodologia/', es: '/es/metodologia/' },
 };
 
@@ -62,6 +62,7 @@ export const t = {
     soloNucleos: 'A {m} cada nucli té les seves festes locals. Tria el teu nucli per calcular un termini.',
     nucleos: 'Festes locals per nucli',
     avisoSinLocales: 'Encara no hi ha festes locals de {m} per a {y}. El resultat pot canviar quan es publiquin.',
+    avisoProvisional: "Les festes locals de {m} per a {y} són les aprovades per l'ajuntament i encara no s'han publicat al DOGC. Poden canviar.",
     avisoSinGenerales: 'No hi ha festius generals carregats per a {y}.',
     avisoContencioso: 'Si és per a un recurs contenciós administratiu, aquest càlcul no serveix: en via judicial agost i del 24 de desembre al 6 de gener són inhàbils.',
     avisoOrgano: "Si l'òrgan és fora de Catalunya (un ministeri, per exemple), també compten els festius del seu municipi, que aquesta eina encara no inclou.",
@@ -119,6 +120,7 @@ export const t = {
     soloNucleos: 'En {m} cada núcleo tiene sus propias fiestas locales. Elige tu núcleo para calcular un plazo.',
     nucleos: 'Fiestas locales por núcleo',
     avisoSinLocales: 'Aún no hay fiestas locales de {m} para {y}. El resultado puede cambiar cuando se publiquen.',
+    avisoProvisional: 'Las fiestas locales de {m} para {y} son las aprobadas por el ayuntamiento y aún no se han publicado en el DOGC. Pueden cambiar.',
     avisoSinGenerales: 'No hay festivos generales cargados para {y}.',
     avisoContencioso: 'Si es para un recurso contencioso-administrativo, este cálculo no sirve: en vía judicial agosto y del 24 de diciembre al 6 de enero son inhábiles.',
     avisoOrgano: 'Si el órgano está fuera de Cataluña (un ministerio, por ejemplo), también cuentan los festivos de su municipio, que esta herramienta aún no incluye.',

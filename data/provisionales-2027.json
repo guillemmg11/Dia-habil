@@ -1,0 +1,79 @@
+{
+ "Barcelona": {
+  "fechas": [
+   "2027-05-17",
+   "2027-09-24"
+  ],
+  "fuente": "https://ajuntament.barcelona.cat/calendarifestius/ca/"
+ },
+ "Sant Cugat del Vallès": {
+  "fechas": [
+   "2027-03-03",
+   "2027-06-29"
+  ],
+  "fuente": "https://www.cugat.cat/noticies/aquests-son-els-festius-locals-a-sant-cugat-i-valldoreix-de-2027/"
+ },
+ "Girona": {
+  "fechas": [
+   "2027-07-26",
+   "2027-10-29"
+  ],
+  "fuente": "https://diaricatalunya.cat/girones/general/girona-ja-te-festius-locals-per-al-2027-sant-jaume-i-sant-narcis"
+ },
+ "Sabadell": {
+  "fechas": [
+   "2027-05-10",
+   "2027-09-06"
+  ],
+  "fuente": "https://radiosabadell.fm/actualitat/societat/aprovat-calendari-dies-festius-2027-sabadell"
+ },
+ "Badalona": {
+  "fechas": [
+   "2027-05-11",
+   "2027-05-17"
+  ],
+  "fuente": "https://www.badalona.cat/ca/serveis-ajuntament/activitat-economica/comerc-1/actualitzacio-de-la-normativa-dhoraris-comercials/calendari-laboral-i-festes-locals"
+ },
+ "L'Hospitalet de Llobregat": {
+  "fechas": [
+   "2027-05-17",
+   "2027-09-24"
+  ],
+  "fuente": "https://seuelectronica.l-h.cat/185914_1.aspx"
+ },
+ "Lleida": {
+  "fechas": [
+   "2027-05-11",
+   "2027-09-29"
+  ],
+  "fuente": "https://www.paeria.cat/ca/ciutat/calendaris/calendari-laboral"
+ },
+ "Ripollet": {
+  "fechas": [
+   "2027-05-17",
+   "2027-08-30"
+  ],
+  "fuente": "https://www.totripollet.cat/politica/festius-locals-2027-transport-obres-temes-ple-juliol_2238478102.html"
+ },
+ "Terrassa": {
+  "fechas": [
+   "2027-03-25",
+   "2027-07-05"
+  ],
+  "fuente": "https://www.diarideterrassa.com/terrassa/aquestes-seran-les-festes-locals-de-terrassa-el-2027.html"
+ },
+ "Cornellà de Llobregat": {
+  "fechas": [
+   "2027-05-17",
+   "2027-05-28"
+  ],
+  "fuente": "https://www.cornella.cat/ca/viure-a-cornella/la-ciutat/festes-locals-i-fires/festes-locals-i-fires"
+ },
+ "Santa Coloma de Gramenet": {
+  "fechas": [
+   "2027-05-17",
+   "2027-09-24"
+  ],
+  "fuente": "https://elwebdelmirall.net/noticies/economia/6293-les-festes-locals-seran-el-17-de-maig-i-el-24-de-setembre"
+ }
+}

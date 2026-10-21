@@ -14,7 +14,9 @@ const ca = lang === 'ca';
 const cal = crearCalendario(datos);
 const generales = cal.generalesDe(year, muni.codigo);
 const anomalia = (datos as any).anomalias?.[muni.codigo]?.[lang];
-const locales = ((datos.locales as any)[String(year)] ?? {})[muni.codigo] ?? null;
+const locales = cal.localesDe(year, muni.codigo) ?? null;
+const provisional = cal.esProvisional(year, muni.codigo) ? (datos as any).provisionales[String(year)][muni.codigo] : null;
+const otroAnio = year === 2026 ? 2027 : 2026;
 const estado = (datos as any).estado?.[String(year)]?.[muni.codigo];
 const nucleos = Object.entries((datos as any).nucleos?.[String(year)] ?? {})
   .filter(([, n]: any) => n.municipio === muni.codigo)
@@ -45,14 +47,16 @@ for (let m = 1; m <= 12; m++) {
 const entreSemana = filas.filter((f) => ![0, 6].includes(diaSemana(f.fecha)));
 const puentes = entreSemana.filter((f) => [2, 4].includes(diaSemana(f.fecha)))
   .map((f) => ({ festivo: f, dia: sumarDias(f.fecha, diaSemana(f.fecha) === 2 ? -1 : 1) }));
+const porMes = meses.map((m, i) => ({ nombre: m.nombre, festivos: filas.filter((f) => Number(f.fecha.slice(5, 7)) === i + 1) }));
 const iniciales = ca ? ['dl', 'dt', 'dc', 'dj', 'dv', 'ds', 'dg'] : ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
+const locTxt = (locales ?? []).map((f: any) => fmtCorto(f.fecha)).join(ca ? ' i ' : ' y ');
 const title = ca
-  ? `Festius ${year} a ${muni.nombre}: calendari laboral i festes locals`
-  : `Festivos ${year} en ${muni.nombre}: calendario laboral y fiestas locales`;
+  ? `Festius ${muni.nombre} ${year}: calendari laboral i festes locals`
+  : `Festivos ${muni.nombre} ${year}: calendario laboral y fiestas locales`;
 const description = ca
-  ? `Festius de ${year} a ${muni.nombre}: festes locals, autonòmiques i estatals, ponts i dies hàbils per a terminis administratius.`
-  : `Festivos de ${year} en ${muni.nombre}: fiestas locales, autonómicas y estatales, puentes y días hábiles para plazos administrativos.`;
+  ? `Festius de ${muni.nombre} el ${year}${locTxt ? `: festes locals el ${locTxt}` : ''}, festius de Catalunya, ponts i calendari laboral mes a mes.`
+  : `Festivos de ${muni.nombre} en ${year}${locTxt ? `: fiestas locales el ${locTxt}` : ''}, festivos de Cataluña, puentes y calendario laboral mes a mes.`;
 const loc = locales ?? [];
 const resumen = ca
   ? `L'any ${year}, ${muni.nombre} té ${filas.length} festius: ${generales.length} generals${loc.length ? ` i ${loc.length} ${loc.length === 1 ? 'festa local' : 'festes locals'}, ${loc.map((f: any) => `el ${fmtCorto(f.fecha)}`).join(' i ')}` : ''}. ${entreSemana.length} cauen entre setmana, de manera que l'any té ${habiles} dies hàbils per comptar terminis administratius.`
@@ -62,11 +66,15 @@ const resumen = ca
   alternates={{ ca: rutas.municipio.ca(year, muni.slug), es: rutas.municipio.es(year, muni.slug) }}
   breadcrumbs={[
     { name: s.marca, url: rutas.inicio[lang] },
-    { name: `${s.calendario} ${year}`, url: rutas.calendario[lang](year) },
+    { name: ca ? `Festius ${year}` : `Festivos ${year}`, url: rutas.calendario[lang](year) },
     { name: muni.nombre, url: rutas.municipio[lang](year, muni.slug) },
   ]}>
-  <h1>{ca ? `Festius ${year} a ${muni.nombre}` : `Festivos ${year} en ${muni.nombre}`}</h1>
+  <h1>{ca ? `Festius ${muni.nombre} ${year}` : `Festivos en ${muni.nombre} ${year}`}</h1>
   <p class="lead resumen">{resumen}</p>
+  <p class="otros-anios"><a href={rutas.municipio[lang](otroAnio, muni.slug)}>{ca ? `Festius ${muni.nombre} ${otroAnio}` : `Festivos ${muni.nombre} ${otroAnio}`}</a> <span aria-hidden="true">|</span> <a href={rutas.calendario[lang](year)}>{ca ? `Festius de Catalunya ${year}` : `Festivos de Cataluña ${year}`}</a></p>
+  {provisional && <p class="aviso">{ca
+    ? `Les festes locals de ${year} són les que ha aprovat l'ajuntament. Encara no s'han publicat al DOGC i les confirmarem quan surti l'ordre oficial.`
+    : `Las fiestas locales de ${year} son las que ha aprobado el ayuntamiento. Aún no se han publicado en el DOGC y las confirmaremos cuando salga la orden oficial.`}{' '}<a href={provisional.fuente} rel="nofollow">{ca ? 'Font: ajuntament' : 'Fuente: ayuntamiento'}</a></p>}
   {anomalia && year === 2026 && <p class="aviso">{anomalia}</p>}
   {estado === 'sin_propuesta' && <p class="aviso">{s.sinPropuesta.replace('{y}', String(year))}</p>}
   {estado === 'solo_nucleos' && <p class="aviso">{s.soloNucleos.replace('{m}', muni.nombre)}</p>}
@@ -108,6 +116,28 @@ const resumen = ca
           </div>
         </div>))}
     </div>
+  </section>
+
+  <section aria-labelledby="meses">
+    <h2 id="meses">{ca ? `Festius per mesos a ${muni.nombre}` : `Festivos por meses en ${muni.nombre}`}</h2>
+    <table class="por-mes"><tbody>{porMes.map((m) => (
+      <tr><th scope="row">{m.nombre}</th><td>{m.festivos.length ? m.festivos.map((f) => `${Number(f.fecha.slice(8))} (${f.nombre})`).join(', ') : (ca ? 'Cap festiu' : 'Ningún festivo')}</td></tr>))}
+    </tbody></table>
+  </section>
+
+  <section aria-labelledby="dudas">
+    <h2 id="dudas">{ca ? 'Dubtes habituals' : 'Dudas habituales'}</h2>
+    <h3>{ca ? `Quines són les festes locals de ${muni.nombre} el ${year}?` : `¿Cuáles son las fiestas locales de ${muni.nombre} en ${year}?`}</h3>
+    <p>{locales && locales.length
+      ? (ca ? `Les festes locals de ${muni.nombre} el ${year} són el ${(locales as any[]).map((f) => `${fmtSemana(f.fecha)} ${fmtCorto(f.fecha)}`).join(' i el ')}.${provisional ? " Les ha aprovat l'ajuntament i falta la confirmació al DOGC." : ''}`
+            : `Las fiestas locales de ${muni.nombre} en ${year} son el ${(locales as any[]).map((f) => `${fmtSemana(f.fecha)} ${fmtCorto(f.fecha)}`).join(' y el ')}.${provisional ? ' Las ha aprobado el ayuntamiento y falta la confirmación en el DOGC.' : ''}`)
+      : estado === 'solo_nucleos' ? s.soloNucleos.replace('{m}', muni.nombre) : s.pendientes.replace('{y}', String(year))}</p>
+    <h3>{ca ? 'Els festius locals compten per als terminis administratius?' : '¿Los festivos locales cuentan para los plazos administrativos?'}</h3>
+    <p>{ca
+      ? `Sí. Si vius a ${muni.nombre}, les seves festes locals són dies inhàbils per comptar terminis davant l'Administració (article 30.6 de la Llei 39/2015), igual que els caps de setmana i els festius de Catalunya.`
+      : `Sí. Si vives en ${muni.nombre}, sus fiestas locales son días inhábiles para contar plazos ante la Administración (artículo 30.6 de la Ley 39/2015), igual que los fines de semana y los festivos de Cataluña.`}</p>
+    <h3>{ca ? `Quants dies hàbils té el ${year} a ${muni.nombre}?` : `¿Cuántos días hábiles tiene ${year} en ${muni.nombre}?`}</h3>
+    <p>{ca ? `${habiles} dies hàbils: els dies de dilluns a divendres que no són festius.` : `${habiles} días hábiles: los días de lunes a viernes que no son festivos.`}</p>
   </section>
 
   {nucleos.length > 0 && (
@@ -156,6 +186,10 @@ const resumen = ca
   .rejilla .finde { color:var(--ink-3); background:var(--soft); }
   .rejilla .fest { background:var(--rojo); color:#fff; font-weight:700; }
   .fuente { margin-top:40px; }
+  .otros-anios { margin:-8px 0 20px; font-weight:700; display:flex; gap:12px; flex-wrap:wrap; }
+  .otros-anios span { color:var(--line); }
+  .por-mes th { width:30%; text-transform:capitalize; color:var(--ink); border-bottom:1px solid var(--line); font-size:1rem; }
+  #dudas h3 { margin-top:28px; }
   @media (max-width: 860px) {
     .dos-col { grid-template-columns:1fr; gap:0; }
     .anyo { grid-template-columns:repeat(2, 1fr); gap:24px; }
