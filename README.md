@@ -15,6 +15,8 @@ npm run build      # pruebas + comprobación de municipios indexados + compilaci
 
 ## Despliegue en Coolify
 
+Despliegue automático: webhook de GitHub hacia Coolify en cada push a `main` (configurado el 21/10/2026).
+
 1. Nuevo recurso en el proyecto: aplicación desde el repositorio de GitHub `guillemmg11/Dia-habil`, rama `main`.
 2. Build pack: **Dockerfile**. Puerto expuesto: **80**.
 3. Dominio: `https://diahabil.es` (y redirección de `www`).
