@@ -1,30 +1,62 @@
 ---
 import Base from '../layouts/Base.astro';
+import Calculadora from './Calculadora.astro';
+import Anuncio from './Anuncio.astro';
 import { t, rutas, fechaLarga } from '../i18n.js';
 import datos from '../../data/calendario.json';
 import { crearCalendario } from '../lib/calendario.js';
 import { nombreVisible } from '../lib/municipios.js';
+import { sumarDias, diaSemana } from '../lib/fechas.js';
 interface Props { lang: 'ca' | 'es'; year: number; muni: { codigo: string; nombre: string; slug: string }; indexado: boolean; }
 const { lang, year, muni, indexado } = Astro.props;
 const s = t[lang];
-const generales = crearCalendario(datos).generalesDe(year, muni.codigo);
+const ca = lang === 'ca';
+const cal = crearCalendario(datos);
+const generales = cal.generalesDe(year, muni.codigo);
 const anomalia = (datos as any).anomalias?.[muni.codigo]?.[lang];
 const locales = ((datos.locales as any)[String(year)] ?? {})[muni.codigo] ?? null;
 const estado = (datos as any).estado?.[String(year)]?.[muni.codigo];
 const nucleos = Object.entries((datos as any).nucleos?.[String(year)] ?? {})
   .filter(([, n]: any) => n.municipio === muni.codigo)
   .map(([codigo, n]: any) => ({ codigo, nombre: nombreVisible(n.nombre), fechas: n.fechas, sinPropuesta: n.sinPropuesta }));
+
+const fmtCorto = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString(s.locale, { day: 'numeric', month: 'long', timeZone: 'UTC' });
+const fmtSemana = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString(s.locale, { weekday: 'long', timeZone: 'UTC' });
 const filas = [
-  ...generales.map((f: any) => ({ fecha: f.fecha, nombre: f.nombre[lang] ?? f.nombre, tipo: s[f.ambito as 'estatal' | 'autonomico'] })),
-  ...(locales ?? []).map((f: any) => ({ fecha: f.fecha, nombre: s.festivoLocal, tipo: s.local })),
+  ...generales.map((f: any) => ({ fecha: f.fecha, nombre: f.nombre[lang] ?? f.nombre, tipo: s[f.ambito as 'estatal' | 'autonomico'], local: false })),
+  ...(locales ?? []).map((f: any) => ({ fecha: f.fecha, nombre: s.festivoLocal, tipo: s.local, local: true })),
 ].sort((a, b) => a.fecha.localeCompare(b.fecha));
-const title = lang === 'ca'
+const porFecha = new Map(filas.map((f) => [f.fecha, f]));
+
+// Días del año: hábiles para plazos y meses para el calendario.
+let habiles = 0;
+const meses: { nombre: string; huecos: number; dias: { d: number; clase: string; titulo?: string }[] }[] = [];
+for (let m = 1; m <= 12; m++) {
+  const primero = `${year}-${String(m).padStart(2, '0')}-01`;
+  const mes = { nombre: new Date(primero + 'T00:00:00Z').toLocaleDateString(s.locale, { month: 'long', timeZone: 'UTC' }), huecos: (diaSemana(primero) + 6) % 7, dias: [] as any[] };
+  for (let f = primero; f.slice(5, 7) === String(m).padStart(2, '0'); f = sumarDias(f, 1)) {
+    const fest = porFecha.get(f);
+    const dow = diaSemana(f);
+    if (!fest && dow !== 0 && dow !== 6) habiles++;
+    mes.dias.push({ d: Number(f.slice(8)), clase: fest ? 'fest' : dow === 0 || dow === 6 ? 'finde' : '', titulo: fest ? fest.nombre : undefined });
+  }
+  meses.push(mes);
+}
+const entreSemana = filas.filter((f) => ![0, 6].includes(diaSemana(f.fecha)));
+const puentes = entreSemana.filter((f) => [2, 4].includes(diaSemana(f.fecha)))
+  .map((f) => ({ festivo: f, dia: sumarDias(f.fecha, diaSemana(f.fecha) === 2 ? -1 : 1) }));
+const iniciales = ca ? ['dl', 'dt', 'dc', 'dj', 'dv', 'ds', 'dg'] : ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+const title = ca
   ? `Festius ${year} a ${muni.nombre}: calendari laboral i festes locals`
   : `Festivos ${year} en ${muni.nombre}: calendario laboral y fiestas locales`;
-const description = lang === 'ca'
-  ? `Tots els festius de ${year} a ${muni.nombre}: festes locals, autonòmiques i estatals, i dies inhàbils per a terminis administratius.`
-  : `Todos los festivos de ${year} en ${muni.nombre}: fiestas locales, autonómicas y estatales, y días inhábiles para plazos administrativos.`;
-const calcUrl = `${rutas.calculadora[lang]}?m1=${muni.codigo}`;
+const description = ca
+  ? `Festius de ${year} a ${muni.nombre}: festes locals, autonòmiques i estatals, ponts i dies hàbils per a terminis administratius.`
+  : `Festivos de ${year} en ${muni.nombre}: fiestas locales, autonómicas y estatales, puentes y días hábiles para plazos administrativos.`;
+const loc = locales ?? [];
+const resumen = ca
+  ? `L'any ${year}, ${muni.nombre} té ${filas.length} festius: ${generales.length} generals${loc.length ? ` i ${loc.length} ${loc.length === 1 ? 'festa local' : 'festes locals'}, ${loc.map((f: any) => `el ${fmtCorto(f.fecha)}`).join(' i ')}` : ''}. ${entreSemana.length} cauen entre setmana, de manera que l'any té ${habiles} dies hàbils per comptar terminis administratius.`
+  : `En ${year}, ${muni.nombre} tiene ${filas.length} festivos: ${generales.length} generales${loc.length ? ` y ${loc.length} ${loc.length === 1 ? 'fiesta local' : 'fiestas locales'}, el ${loc.map((f: any) => fmtCorto(f.fecha)).join(' y el ')}` : ''}. ${entreSemana.length} caen entre semana, así que el año tiene ${habiles} días hábiles para contar plazos administrativos.`;
 ---
 <Base lang={lang} title={title} description={description} noindex={!indexado}
   alternates={{ ca: rutas.municipio.ca(year, muni.slug), es: rutas.municipio.es(year, muni.slug) }}
@@ -33,25 +65,99 @@ const calcUrl = `${rutas.calculadora[lang]}?m1=${muni.codigo}`;
     { name: `${s.calendario} ${year}`, url: rutas.calendario[lang](year) },
     { name: muni.nombre, url: rutas.municipio[lang](year, muni.slug) },
   ]}>
-  <h1>{lang === 'ca' ? `Festius ${year} a ${muni.nombre}` : `Festivos ${year} en ${muni.nombre}`}</h1>
-  <p class="lead">{lang === 'ca'
-    ? `Calendari laboral de ${muni.nombre} per a ${year}. Aquests dies també són inhàbils per comptar terminis administratius.`
-    : `Calendario laboral de ${muni.nombre} para ${year}. Estos días también son inhábiles para contar plazos administrativos.`}</p>
+  <h1>{ca ? `Festius ${year} a ${muni.nombre}` : `Festivos ${year} en ${muni.nombre}`}</h1>
+  <p class="lead resumen">{resumen}</p>
   {anomalia && year === 2026 && <p class="aviso">{anomalia}</p>}
   {estado === 'sin_propuesta' && <p class="aviso">{s.sinPropuesta.replace('{y}', String(year))}</p>}
   {estado === 'solo_nucleos' && <p class="aviso">{s.soloNucleos.replace('{m}', muni.nombre)}</p>}
-  {!locales && <p class="aviso">{s.pendientes.replace('{y}', String(year))}</p>}
-  <table>
-    <thead><tr><th>{lang === 'ca' ? 'Data' : 'Fecha'}</th><th>{s.festivos}</th><th>{lang === 'ca' ? 'Tipus' : 'Tipo'}</th></tr></thead>
-    <tbody>{filas.map((f) => <tr><td>{fechaLarga(f.fecha, lang)}</td><td>{f.nombre}</td><td>{f.tipo}</td></tr>)}</tbody>
-  </table>
-  {nucleos.length > 0 && (<>
-    <h2>{s.nucleos}</h2>
-    <table><tbody>{nucleos.map((n) => (
-      <tr><td><a href={`${rutas.calculadora[lang]}?m1=${n.codigo}`}>{n.nombre}</a></td>
-      <td>{n.sinPropuesta ? '—' : n.fechas.map((f: any) => fechaLarga(f.fecha, lang)).join(' · ')}</td></tr>))}
-    </tbody></table>
-  </>)}
-  {estado !== 'solo_nucleos' && <p><a href={calcUrl}><strong>{s.calcularEn.replace('{m}', muni.nombre)}</strong></a></p>}
-  <p class="nota">{s.fuente}: {lang === 'ca' ? 'Generalitat de Catalunya (DOGC i dades obertes) i BOE.' : 'Generalitat de Catalunya (DOGC y datos abiertos) y BOE.'} {s.avisoDatos}</p>
+  {!locales && estado !== 'solo_nucleos' && <p class="aviso">{s.pendientes.replace('{y}', String(year))}</p>}
+
+  <div class="dos-col">
+    <section aria-labelledby="lista">
+      <h2 id="lista">{ca ? `Tots els festius de ${year}` : `Todos los festivos de ${year}`}</h2>
+      <ul class="festivos">
+        {filas.map((f) => (
+          <li class={f.local ? 'local' : ''}>
+            <span class="f-dia">{Number(f.fecha.slice(8))}</span>
+            <span class="f-texto"><strong>{f.nombre}</strong><span>{fmtSemana(f.fecha)}, {fmtCorto(f.fecha)}{f.local ? '' : `. ${f.tipo}`}</span></span>
+          </li>))}
+      </ul>
+    </section>
+    <section aria-labelledby="puentes" class="lateral">
+      <h2 id="puentes">{ca ? 'Ponts possibles' : 'Puentes posibles'}</h2>
+      {puentes.length ? (
+        <ul class="puentes">{puentes.map((p) => <li><strong>{fmtSemana(p.dia)}, {fmtCorto(p.dia)}</strong><span>{ca ? `Pont de: ${p.festivo.nombre}` : `Puente de: ${p.festivo.nombre}`} ({fmtCorto(p.festivo.fecha)})</span></li>)}</ul>
+      ) : <p>{ca ? `Cap festiu cau en dimarts o dijous el ${year}.` : `Ningún festivo cae en martes o jueves en ${year}.`}</p>}
+      <p class="nota">{ca ? 'Un pont no és festiu oficial: per als terminis administratius és un dia hàbil.' : 'Un puente no es festivo oficial: para los plazos administrativos es un día hábil.'}</p>
+    </section>
+  </div>
+
+  <Anuncio lang={lang} alto={250} />
+
+  <section aria-labelledby="anyo">
+    <h2 id="anyo">{ca ? `Calendari ${year} de ${muni.nombre}` : `Calendario ${year} de ${muni.nombre}`}</h2>
+    <p class="leyenda"><span class="muestra fest"></span>{ca ? 'Festiu' : 'Festivo'} <span class="muestra finde"></span>{ca ? 'Cap de setmana' : 'Fin de semana'}</p>
+    <div class="anyo">
+      {meses.map((m) => (
+        <div class="mes">
+          <h3>{m.nombre}</h3>
+          <div class="rejilla" role="presentation">
+            {iniciales.map((i) => <span class="ini">{i}</span>)}
+            {Array.from({ length: m.huecos }).map(() => <span></span>)}
+            {m.dias.map((d) => <span class={d.clase} title={d.titulo}>{d.d}</span>)}
+          </div>
+        </div>))}
+    </div>
+  </section>
+
+  {nucleos.length > 0 && (
+    <section aria-labelledby="nucleos">
+      <h2 id="nucleos">{s.nucleos}</h2>
+      <table><tbody>{nucleos.map((n) => (
+        <tr><td><a href={`${rutas.calculadora[lang]}?m1=${n.codigo}`}>{n.nombre}</a></td>
+        <td>{n.sinPropuesta ? (ca ? 'Sense proposta' : 'Sin propuesta') : n.fechas.map((f: any) => fmtCorto(f.fecha)).join(ca ? ' i ' : ' y ')}</td></tr>))}
+      </tbody></table>
+    </section>
+  )}
+
+  {estado !== 'solo_nucleos' && (
+    <section aria-labelledby="calc">
+      <h2 id="calc">{s.calcularEn.replace('{m}', muni.nombre)}</h2>
+      <Calculadora lang={lang} municipio={muni.codigo} />
+    </section>
+  )}
+
+  <p class="nota fuente">{s.fuente}: {ca ? 'Ordre EMT/208/2025 (DOGC 9565) i Ordre EMT/3/2026 per a les festes locals; BOE i DOGC per als festius generals.' : 'Ordre EMT/208/2025 (DOGC 9565) y Ordre EMT/3/2026 para las fiestas locales; BOE y DOGC para los festivos generales.'} {s.avisoDatos}</p>
 </Base>
+
+<style>
+  .resumen { max-width:62ch; }
+  .dos-col { display:grid; grid-template-columns:minmax(0, 1.5fr) minmax(0, 1fr); gap:40px; }
+  .festivos { list-style:none; padding:0; margin:12px 0 0; border-top:2px solid var(--ink); }
+  .festivos li { display:flex; gap:16px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
+  .f-dia { flex:none; width:46px; height:46px; display:grid; place-items:center; border:1.5px solid var(--ink); border-radius:8px; font-weight:700; font-size:1.2rem; }
+  .festivos li.local .f-dia { background:var(--rojo); border-color:var(--rojo); color:#fff; }
+  .f-texto { display:grid; }
+  .f-texto span { color:var(--ink-3); font-size:.92rem; }
+  .f-texto span::first-letter { text-transform:uppercase; }
+  .puentes { list-style:none; padding:0; margin:12px 0; border-top:2px solid var(--ink); }
+  .puentes li { padding:10px 0; border-bottom:1px solid var(--line); display:grid; }
+  .puentes strong::first-letter { text-transform:uppercase; }
+  .puentes span { color:var(--ink-3); font-size:.92rem; }
+  .leyenda { display:flex; align-items:center; gap:8px; font-size:.9rem; color:var(--ink-2); }
+  .muestra { width:14px; height:14px; border-radius:50%; display:inline-block; }
+  .muestra.fest { background:var(--rojo); }
+  .muestra.finde { background:var(--soft); border:1px solid var(--line); margin-left:12px; }
+  .anyo { display:grid; grid-template-columns:repeat(4, 1fr); gap:28px 32px; margin-top:16px; }
+  .mes h3 { margin:0 0 8px; font-size:1rem; text-transform:capitalize; }
+  .rejilla { display:grid; grid-template-columns:repeat(7, 1fr); gap:2px; text-align:center; font-size:.85rem; }
+  .rejilla span { aspect-ratio:1; display:grid; place-items:center; border-radius:50%; }
+  .rejilla .ini { color:var(--ink-3); font-size:.75rem; aspect-ratio:auto; padding-bottom:4px; }
+  .rejilla .finde { color:var(--ink-3); background:var(--soft); }
+  .rejilla .fest { background:var(--rojo); color:#fff; font-weight:700; }
+  .fuente { margin-top:40px; }
+  @media (max-width: 860px) {
+    .dos-col { grid-template-columns:1fr; gap:0; }
+    .anyo { grid-template-columns:repeat(2, 1fr); gap:24px; }
+  }
+</style>

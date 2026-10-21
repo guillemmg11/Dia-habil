@@ -1,0 +1,11 @@
+---
+// Hueco reservado para AdSense: altura fija para que el anuncio no mueva la página (CLS).
+interface Props { lang: 'ca' | 'es'; alto?: number; }
+const { lang, alto = 280 } = Astro.props;
+---
+<aside class="anuncio" style={`min-height:${alto}px`} aria-label={lang === 'ca' ? 'Publicitat' : 'Publicidad'}>
+  <span>{lang === 'ca' ? 'Publicitat' : 'Publicidad'}</span>
+</aside>
+<style>
+  .anuncio { margin:40px 0; display:grid; place-items:center; border:1px dashed var(--line); border-radius:8px; color:var(--ink-3); font-size:.8rem; }
+</style>

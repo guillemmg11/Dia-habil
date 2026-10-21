@@ -1,6 +1,9 @@
 ---
 import { t, rutas } from '../i18n.js';
 import { paginas, rutasLegales } from '../legal.js';
+import Logo from '../components/Logo.astro';
+import '@fontsource/atkinson-hyperlegible-next/400.css';
+import '@fontsource/atkinson-hyperlegible-next/700.css';
 interface Props {
   lang: 'ca' | 'es';
   title: string;
@@ -38,54 +41,101 @@ const bcLd = breadcrumbs.length ? {
   <meta property="og:locale" content={s.locale.replace('-', '_')} />
   {bcLd && <script type="application/ld+json" set:html={JSON.stringify(bcLd)} />}
   {jsonld && <script type="application/ld+json" set:html={JSON.stringify(jsonld)} />}
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#ffffff" />
   <style is:global>
-    :root { --bg:#fbfaf7; --fg:#1d1d1b; --muted:#5f5e5a; --line:#e3e1db; --accent:#1f5fbf; --accent-bg:#eaf1fb; --warn:#8a5a00; --warn-bg:#fff4dc; }
-    @media (prefers-color-scheme: dark) { :root { --bg:#161615; --fg:#ecebe7; --muted:#a8a7a2; --line:#33322f; --accent:#7fb0ff; --accent-bg:#1c2a40; --warn:#ffcf70; --warn-bg:#3a2c0f; } }
-    * { box-sizing: border-box; }
-    body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
-    a { color:var(--accent); }
-    header, main, footer { max-width: 760px; margin: 0 auto; padding: 0 16px; }
-    header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding-top:16px; padding-bottom:16px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
-    header .marca { font-weight:700; text-decoration:none; color:var(--fg); font-size:1.1rem; }
-    header nav { display:flex; gap:14px; flex-wrap:wrap; font-size:.95rem; }
-    main { padding-top:24px; padding-bottom:48px; }
-    h1 { font-size:1.75rem; line-height:1.2; margin:0 0 8px; }
-    h2 { font-size:1.25rem; margin:32px 0 8px; }
-    .lead { color:var(--muted); margin-top:0; }
-    .migas { font-size:.85rem; color:var(--muted); margin-bottom:12px; }
-    .migas a { color:var(--muted); }
+    :root {
+      --paper:#ffffff; --ink:#000000; --ink-2:#3d3d3d; --ink-3:#6b6b6b; --line:#dcdcdc; --soft:#f5f5f3;
+      --azul:#1847c2; --azul-hover:#123a9e; --azul-claro:#eef2fc; --rojo:#c8102e;
+      --aviso:#5c4000; --aviso-bg:#fff5db;
+      --ancho:1080px; --texto:68ch;
+      color-scheme: light;
+    }
+    * { box-sizing:border-box; }
+    html { -webkit-text-size-adjust:100%; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:17px/1.6 "Atkinson Hyperlegible Next", system-ui, sans-serif; font-variant-numeric:tabular-nums; }
+    a { color:var(--azul); text-underline-offset:.18em; }
+    a:hover { color:var(--azul-hover); }
+    :focus-visible { outline:3px solid var(--azul); outline-offset:2px; border-radius:4px; }
+    .envoltorio { max-width:var(--ancho); margin:0 auto; padding:0 20px; }
+    h1 { font-size:clamp(2rem, 1.2rem + 3.2vw, 3.1rem); line-height:1.08; letter-spacing:-.025em; margin:0 0 14px; max-width:20ch; }
+    h2 { font-size:1.6rem; line-height:1.2; letter-spacing:-.015em; margin:56px 0 12px; }
+    h3 { font-size:1.15rem; line-height:1.3; margin:24px 0 6px; }
+    p, li { max-width:var(--texto); }
+    .lead { font-size:1.15rem; color:var(--ink-2); margin:0 0 24px; }
+    .migas { font-size:.9rem; color:var(--ink-3); margin:0 0 16px; }
+    .migas a { color:var(--ink-3); }
     table { width:100%; border-collapse:collapse; margin:8px 0; }
-    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
-    .aviso { background:var(--warn-bg); color:var(--warn); padding:10px 12px; border-radius:8px; margin:12px 0; }
-    .nota { font-size:.875rem; color:var(--muted); }
-    footer { border-top:1px solid var(--line); padding-top:16px; padding-bottom:32px; font-size:.85rem; color:var(--muted); }
-    footer .legales { display:flex; flex-wrap:wrap; gap:6px 16px; }
-    footer .legales a { color:var(--muted); }
+    th, td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { font-size:.9rem; color:var(--ink-3); font-weight:700; border-bottom:2px solid var(--ink); }
+    .aviso { background:var(--aviso-bg); color:var(--aviso); padding:12px 14px; border-radius:8px; margin:12px 0; }
+    .nota { font-size:.9rem; color:var(--ink-3); }
+    .sitio-cab { border-bottom:1px solid var(--line); }
+    .sitio-cab .envoltorio { display:flex; justify-content:space-between; align-items:center; gap:12px 24px; padding-top:14px; padding-bottom:14px; flex-wrap:wrap; }
+    .sitio-cab .marca { text-decoration:none; }
+    .sitio-cab nav { display:flex; gap:6px 22px; flex-wrap:wrap; font-size:.98rem; }
+    .sitio-cab nav a { color:var(--ink); text-decoration:none; font-weight:700; }
+    .sitio-cab nav a:hover { text-decoration:underline; }
+    .sitio-cab nav .idioma { font-weight:400; color:var(--ink-2); }
+    main.envoltorio { padding-top:32px; padding-bottom:64px; }
+    .sitio-pie { background:var(--soft); border-top:1px solid var(--line); font-size:.92rem; color:var(--ink-2); }
+    .sitio-pie .envoltorio { display:grid; grid-template-columns:2fr 1fr 1fr; gap:24px 40px; padding-top:40px; padding-bottom:40px; }
+    .sitio-pie h2 { font-size:.95rem; margin:0 0 10px; letter-spacing:0; }
+    .sitio-pie ul { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+    .sitio-pie a { color:var(--ink-2); }
+    .sitio-pie p { margin:12px 0 0; }
+    @media (max-width: 720px) {
+      body { font-size:16.5px; }
+      .sitio-pie .envoltorio { grid-template-columns:1fr; }
+      h2 { margin-top:44px; }
+      .sitio-cab nav { gap:4px 16px; font-size:.92rem; }
+      .logo-texto { font-size:1.15rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
   </style>
 </head>
 <body>
-  <header>
-    <a class="marca" href={rutas.inicio[lang]}>{s.marca}</a>
-    <nav>
-      <a href={rutas.calculadora[lang]}>{s.calculadora}</a>
-      <a href={rutas.calendario[lang](2026)}>{s.calendario}</a>
-      <a href={alternates[otro]} hreflang={otro}>{s.otroIdioma}</a>
-    </nav>
+  <header class="sitio-cab">
+    <div class="envoltorio">
+      <a class="marca" href={rutas.inicio[lang]} aria-label={`${s.marca}, ${lang === 'ca' ? 'inici' : 'inicio'}`}><Logo texto={s.marca} /></a>
+      <nav aria-label={lang === 'ca' ? 'Principal' : 'Principal'}>
+        <a href={rutas.calculadora[lang]}>Calculadora</a>
+        <a href={rutas.calendario[lang](2026)}>{lang === 'ca' ? 'Festius 2026' : 'Festivos 2026'}</a>
+        <a class="idioma" href={alternates[otro]} hreflang={otro} lang={otro}>{s.otroIdioma}</a>
+      </nav>
+    </div>
   </header>
-  <main>
+  <main class="envoltorio">
     {breadcrumbs.length > 1 && (
-      <nav class="migas" aria-label="breadcrumb">
-        {breadcrumbs.map((b, i) => (<>{i > 0 && ' › '}{i < breadcrumbs.length - 1 ? <a href={b.url}>{b.name}</a> : <span>{b.name}</span>}</>))}
+      <nav class="migas" aria-label={lang === 'ca' ? 'Ruta de navegació' : 'Ruta de navegación'}>
+        {breadcrumbs.map((b, i) => (<>{i > 0 && ' › '}{i < breadcrumbs.length - 1 ? <a href={b.url}>{b.name}</a> : <span aria-current="page">{b.name}</span>}</>))}
       </nav>
     )}
     <slot />
   </main>
-  <footer>
-    <nav class="legales" aria-label={lang === 'ca' ? 'Informació legal' : 'Información legal'}>
-      <a href={rutas.metodologia[lang]}>{s.metodologia}</a>
-      {Object.entries(rutasLegales).map(([clave, r]) => <a href={r[lang]}>{paginas[clave as keyof typeof paginas][lang].titulo}</a>)}
-    </nav>
-    <p>{lang === 'ca' ? 'Un projecte de' : 'Un proyecto de'} <a href="https://rankova.es">Rankova</a> · {lang === 'ca' ? 'Eina orientativa: no substitueix l’assessorament professional.' : 'Herramienta orientativa: no sustituye el asesoramiento profesional.'}</p>
+  <footer class="sitio-pie">
+    <div class="envoltorio">
+      <div>
+        <Logo texto={s.marca} />
+        <p>{lang === 'ca'
+          ? 'Calculadora gratuïta de terminis administratius amb els festius oficials de cada municipi de Catalunya, segons el DOGC i el BOE.'
+          : 'Calculadora gratuita de plazos administrativos con los festivos oficiales de cada municipio de Cataluña, según el DOGC y el BOE.'}</p>
+        <p>{lang === 'ca' ? 'Eina orientativa: no substitueix l’assessorament professional.' : 'Herramienta orientativa: no sustituye el asesoramiento profesional.'} {lang === 'ca' ? 'Un projecte de' : 'Un proyecto de'} <a href="https://rankova.es">Rankova</a>.</p>
+      </div>
+      <nav aria-label={lang === 'ca' ? 'Eines' : 'Herramientas'}>
+        <h2>{lang === 'ca' ? 'Eines' : 'Herramientas'}</h2>
+        <ul>
+          <li><a href={rutas.calculadora[lang]}>{s.calculadora}</a></li>
+          <li><a href={rutas.calendario[lang](2026)}>{s.calendario} 2026</a></li>
+          <li><a href={rutas.calendario[lang](2027)}>{s.calendario} 2027</a></li>
+          <li><a href={rutas.metodologia[lang]}>{s.metodologia}</a></li>
+        </ul>
+      </nav>
+      <nav aria-label={lang === 'ca' ? 'Informació legal' : 'Información legal'}>
+        <h2>{lang === 'ca' ? 'Informació legal' : 'Información legal'}</h2>
+        <ul>{Object.entries(rutasLegales).map(([clave, r]) => <li><a href={r[lang]}>{paginas[clave as keyof typeof paginas][lang].titulo}</a></li>)}</ul>
+      </nav>
+    </div>
   </footer>
 </body>
 </html>

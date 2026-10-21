@@ -1,0 +1,157 @@
+---
+import Base from '../layouts/Base.astro';
+import Calculadora from './Calculadora.astro';
+import Anuncio from './Anuncio.astro';
+import { t, rutas } from '../i18n.js';
+import datos from '../../data/calendario.json';
+import { listaMunicipios, esIndexado } from '../lib/municipios.js';
+interface Props { lang: 'ca' | 'es'; }
+const { lang } = Astro.props;
+const s = t[lang];
+const ca = lang === 'ca';
+const site = Astro.site!.toString().replace(/\/$/, '');
+const populares = listaMunicipios(datos.municipios).filter(esIndexado);
+const nNucleos = Object.keys((datos as any).nucleos['2026']).length;
+const nMunis = Object.keys(datos.municipios).length;
+const calc = (n: number, u: string) => `${rutas.calculadora[lang]}?n=${n}&u=${u}`;
+
+const title = ca
+  ? 'Calculadora de dies hàbils i terminis administratius a Catalunya | Dia hàbil'
+  : 'Calculadora de días hábiles y plazos administrativos en Cataluña | Día hábil';
+const description = ca
+  ? 'Calcula gratis quin dia venç un termini administratiu en dies hàbils, naturals o mesos, amb els festius locals dels 947 municipis de Catalunya.'
+  : 'Calcula gratis qué día vence un plazo administrativo en días hábiles, naturales o meses, con los festivos locales de los 947 municipios de Cataluña.';
+
+const plazos = ca ? [
+  { tramite: 'Esmenar una sol·licitud', plazo: '10 dies hàbils', base: 'Art. 68.1 Llei 39/2015', url: calc(10, 'dias_habiles') },
+  { tramite: "Al·legacions en el tràmit d'audiència", plazo: 'De 10 a 15 dies hàbils', base: 'Art. 82.2 Llei 39/2015', url: calc(10, 'dias_habiles') },
+  { tramite: "Recurs d'alçada", plazo: '1 mes', base: 'Art. 122.1 Llei 39/2015', url: calc(1, 'meses') },
+  { tramite: 'Recurs potestatiu de reposició', plazo: '1 mes', base: 'Art. 124.1 Llei 39/2015', url: calc(1, 'meses') },
+  { tramite: 'Multa de trànsit: pagar amb descompte o al·legar', plazo: '20 dies naturals', base: 'Arts. 94 i 95 RDL 6/2015', url: calc(20, 'dias_naturales') },
+  { tramite: 'Recurs contenciós administratiu', plazo: '2 mesos', base: 'Art. 46.1 Llei 29/1998', url: null },
+] : [
+  { tramite: 'Subsanar una solicitud', plazo: '10 días hábiles', base: 'Art. 68.1 Ley 39/2015', url: calc(10, 'dias_habiles') },
+  { tramite: 'Alegaciones en el trámite de audiencia', plazo: 'De 10 a 15 días hábiles', base: 'Art. 82.2 Ley 39/2015', url: calc(10, 'dias_habiles') },
+  { tramite: 'Recurso de alzada', plazo: '1 mes', base: 'Art. 122.1 Ley 39/2015', url: calc(1, 'meses') },
+  { tramite: 'Recurso potestativo de reposición', plazo: '1 mes', base: 'Art. 124.1 Ley 39/2015', url: calc(1, 'meses') },
+  { tramite: 'Multa de tráfico: pagar con descuento o alegar', plazo: '20 días naturales', base: 'Arts. 94 y 95 RDL 6/2015', url: calc(20, 'dias_naturales') },
+  { tramite: 'Recurso contencioso-administrativo', plazo: '2 meses', base: 'Art. 46.1 Ley 29/1998', url: null },
+];
+
+const pasos = ca ? [
+  ['Es comença l’endemà', 'Si et notifiquen dilluns, el primer dia del termini és dimarts. El dia de la notificació no compta mai.'],
+  ['Se salten els dies inhàbils', 'En dies hàbils no compten dissabtes, diumenges ni festius: estatals, de Catalunya i locals del teu municipi.'],
+  ['Si l’últim dia és inhàbil, es passa al següent', 'Un termini que acaba en dissabte o festiu venç el primer dia hàbil posterior.'],
+] : [
+  ['Se empieza al día siguiente', 'Si te notifican el lunes, el primer día del plazo es el martes. El día de la notificación nunca cuenta.'],
+  ['Se saltan los días inhábiles', 'En días hábiles no cuentan sábados, domingos ni festivos: estatales, de Cataluña y locales de tu municipio.'],
+  ['Si el último día es inhábil, se pasa al siguiente', 'Un plazo que acaba en sábado o festivo vence el primer día hábil posterior.'],
+];
+
+const faq = ca ? [
+  ['Què són els dies hàbils?', 'Són tots els dies excepte els dissabtes, els diumenges i els declarats festius. Ho diu l’article 30.2 de la Llei 39/2015, que regula els terminis davant l’Administració.'],
+  ['El dissabte és hàbil?', 'No. Des del 2 d’octubre de 2016, amb la Llei 39/2015, els dissabtes són inhàbils per als terminis administratius.'],
+  ['L’agost és hàbil?', 'Per als terminis administratius, sí. L’agost només és inhàbil en via judicial, per exemple per presentar un recurs contenciós administratiu.'],
+  ['Quins festius compten?', 'Els festius estatals, els de Catalunya i les dues festes locals del municipi de la persona interessada. Si l’òrgan té la seu en un altre municipi, també compten els d’aquest (art. 30.6).'],
+  ['Com es compta un termini en mesos?', 'De data a data: si et notifiquen el 15 de març, un termini d’un mes venç el 15 d’abril. Si aquell mes no té el dia, venç l’últim dia del mes.'],
+] : [
+  ['¿Qué son los días hábiles?', 'Son todos los días excepto los sábados, los domingos y los declarados festivos. Lo dice el artículo 30.2 de la Ley 39/2015, que regula los plazos ante la Administración.'],
+  ['¿El sábado es hábil?', 'No. Desde el 2 de octubre de 2016, con la Ley 39/2015, los sábados son inhábiles para los plazos administrativos.'],
+  ['¿Agosto es hábil?', 'Para los plazos administrativos, sí. Agosto solo es inhábil en vía judicial, por ejemplo para presentar un recurso contencioso-administrativo.'],
+  ['¿Qué festivos cuentan?', 'Los festivos estatales, los de Cataluña y las dos fiestas locales del municipio de la persona interesada. Si el órgano tiene su sede en otro municipio, también cuentan los de ese municipio (art. 30.6).'],
+  ['¿Cómo se cuenta un plazo en meses?', 'De fecha a fecha: si te notifican el 15 de marzo, un plazo de un mes vence el 15 de abril. Si ese mes no tiene ese día, vence el último día del mes.'],
+];
+
+const jsonld = {
+  '@context': 'https://schema.org', '@type': 'WebApplication', name: s.marca, url: site + rutas.inicio[lang],
+  description, applicationCategory: 'UtilitiesApplication', operatingSystem: 'Web', inLanguage: s.locale,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+  publisher: { '@type': 'Organization', name: 'Rankova', url: 'https://rankova.es' },
+};
+---
+<Base lang={lang} title={title} description={description} alternates={rutas.inicio} jsonld={jsonld}>
+  <section class="portada">
+    <h1>{ca ? 'Calculadora de terminis en dies hàbils' : 'Calculadora de plazos en días hábiles'}</h1>
+    <p class="lead">{ca
+      ? 'Digues-nos quan et van notificar i on vius: et diem quin dia venç el termini, amb els caps de setmana i els festius del teu municipi ja descomptats.'
+      : 'Dinos cuándo te notificaron y dónde vives: te decimos qué día vence el plazo, con los fines de semana y los festivos de tu municipio ya descontados.'}</p>
+    <Calculadora lang={lang} />
+  </section>
+
+  <Anuncio lang={lang} alto={250} />
+
+  <section aria-labelledby="como">
+    <h2 id="como">{ca ? 'Com es compta un termini en dies hàbils' : 'Cómo se cuenta un plazo en días hábiles'}</h2>
+    <ol class="pasos">
+      {pasos.map(([h, p]) => <li><h3>{h}</h3><p>{p}</p></li>)}
+    </ol>
+    <p class="nota">{ca ? 'Base legal: article 30 de la Llei 39/2015, d’1 d’octubre.' : 'Base legal: artículo 30 de la Ley 39/2015, de 1 de octubre.'} <a href={rutas.metodologia[lang]}>{ca ? 'Com calculem' : 'Cómo calculamos'}</a></p>
+  </section>
+
+  <section aria-labelledby="habituales">
+    <h2 id="habituales">{ca ? 'Terminis més habituals' : 'Plazos más habituales'}</h2>
+    <div class="tabla-desplazable">
+      <table class="plazos">
+        <thead><tr><th>{ca ? 'Tràmit' : 'Trámite'}</th><th>{ca ? 'Termini' : 'Plazo'}</th><th>{ca ? 'Base legal' : 'Base legal'}</th><th><span class="sr">{ca ? 'Acció' : 'Acción'}</span></th></tr></thead>
+        <tbody>{plazos.map((p) => (
+          <tr><td>{p.tramite}</td><td class="fuerte">{p.plazo}</td><td class="nota">{p.base}</td>
+          <td>{p.url ? <a href={p.url}>{ca ? 'Calcular' : 'Calcular'}</a> : <span class="nota">{ca ? 'Agost inhàbil: no es calcula aquí' : 'Agosto inhábil: no se calcula aquí'}</span>}</td></tr>))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <Anuncio lang={lang} alto={250} />
+
+  <section aria-labelledby="festivos">
+    <h2 id="festivos">{ca ? 'Festius 2026 per municipi' : 'Festivos 2026 por municipio'}</h2>
+    <p>{ca
+      ? `Calendari laboral de ${nMunis} municipis i ${nNucleos} nuclis de Catalunya, amb les festes locals publicades al DOGC.`
+      : `Calendario laboral de ${nMunis} municipios y ${nNucleos} núcleos de Cataluña, con las fiestas locales publicadas en el DOGC.`}</p>
+    <ul class="munis">{populares.map((m) => <li><a href={rutas.municipio[lang](2026, m.slug)}>{m.nombre}</a></li>)}</ul>
+    <p><a class="enlace-fuerte" href={rutas.calendario[lang](2026)}>{ca ? `Veure tots els municipis` : `Ver todos los municipios`}</a></p>
+  </section>
+
+  <section aria-labelledby="preguntas">
+    <h2 id="preguntas">{ca ? 'Preguntes freqüents' : 'Preguntas frecuentes'}</h2>
+    <div class="faq">{faq.map(([q, a]) => <details><summary>{q}</summary><p>{a}</p></details>)}</div>
+  </section>
+
+  <section class="fuentes" aria-labelledby="datos">
+    <h2 id="datos">{ca ? 'D’on surten les dades' : 'De dónde salen los datos'}</h2>
+    <p>{ca
+      ? 'Les festes locals surten de l’Ordre EMT/208/2025 (DOGC núm. 9565) i la seva modificació, l’Ordre EMT/3/2026. Els festius estatals i de Catalunya, del BOE i del DOGC. Revisem cada canvi publicat.'
+      : 'Las fiestas locales salen de la Ordre EMT/208/2025 (DOGC núm. 9565) y su modificación, la Ordre EMT/3/2026. Los festivos estatales y de Cataluña, del BOE y del DOGC. Revisamos cada cambio publicado.'}</p>
+    <p class="nota">{s.actualizado} 21/10/2026. {s.avisoDatos} <a href={ca ? '/ca/contacte/' : '/es/contacto/'}>{ca ? 'Contacte' : 'Contacto'}</a></p>
+  </section>
+</Base>
+
+<style>
+  .portada { padding-top:8px; }
+  .pasos { list-style:none; counter-reset:paso; padding:0; margin:20px 0 8px; display:grid; grid-template-columns:repeat(3, 1fr); gap:28px; }
+  .pasos li { counter-increment:paso; border-top:2px solid var(--ink); padding-top:14px; }
+  .pasos li::before { content:counter(paso); display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:var(--ink); color:#fff; font-weight:700; }
+  .pasos h3 { margin-top:12px; }
+  .pasos p { margin:0; color:var(--ink-2); }
+  .tabla-desplazable { overflow-x:auto; }
+  .plazos td.fuerte { font-weight:700; white-space:nowrap; }
+  .plazos a { font-weight:700; }
+  .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+  .munis { list-style:none; padding:0; margin:16px 0; columns:4 180px; column-gap:28px; }
+  .munis li { padding:5px 0; break-inside:avoid; }
+  .munis a { color:var(--ink); }
+  .enlace-fuerte { font-weight:700; }
+  .faq { border-top:1px solid var(--line); max-width:var(--texto); }
+  .faq details { border-bottom:1px solid var(--line); padding:4px 0; }
+  .faq summary { cursor:pointer; font-weight:700; font-size:1.08rem; padding:12px 0; list-style:none; display:flex; justify-content:space-between; gap:16px; }
+  .faq summary::after { content:'+'; font-size:1.4rem; line-height:1; color:var(--azul); }
+  .faq details[open] summary::after { content:'−'; }
+  .faq details p { margin:0 0 14px; color:var(--ink-2); }
+  .fuentes { background:var(--soft); border-radius:14px; padding:4px 24px 12px; margin-top:56px; }
+  .fuentes h2 { margin-top:24px; }
+  @media (max-width: 720px) {
+    .pasos { grid-template-columns:1fr; gap:20px; }
+    .fuentes { padding:4px 16px 8px; }
+    .plazos th:nth-child(3), .plazos td:nth-child(3) { display:none; }
+  }
+</style>

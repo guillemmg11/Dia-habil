@@ -2,36 +2,61 @@
 import { t } from '../i18n.js';
 import datos from '../../data/calendario.json';
 import { listaLocalidades } from '../lib/municipios.js';
-interface Props { lang: 'ca' | 'es'; cantidad?: number; unidad?: string; municipio?: string; }
+interface Props { lang: 'ca' | 'es'; cantidad?: number; unidad?: string; municipio?: string; titulo?: string; }
 const { lang, cantidad = 10, unidad = 'dias_habiles', municipio = '' } = Astro.props;
 const s = t[lang];
 const munis = listaLocalidades(datos);
 const muniInicial = munis.find((m) => m.codigo === municipio)?.nombre ?? '';
+const atajos = [
+  { n: 10, u: 'dias_habiles' }, { n: 15, u: 'dias_habiles' }, { n: 1, u: 'meses' }, { n: 20, u: 'dias_naturales' },
+];
+const textoAtajo = (n: number, u: string) => n === 1 && u === 'meses' ? (lang === 'ca' ? '1 mes' : '1 mes') : `${n} ${(s.unidades as any)[u]}`;
 ---
-<form class="calc" data-lang={lang} novalidate>
-  <div class="fila">
-    <label>{s.inicio}<input type="date" name="inicio" required /></label>
-  </div>
-  <div class="fila dos">
-    <label>{s.cantidad}<input type="number" name="cantidad" min="1" max="3650" value={cantidad} required inputmode="numeric" /></label>
-    <label>{s.unidad}
-      <select name="unidad">
-        {Object.entries(s.unidades).map(([k, v]) => <option value={k} selected={k === unidad}>{v}</option>)}
-      </select>
-    </label>
-  </div>
-  <div class="fila">
-    <label>{s.muniInteresado}<input name="muni1" list="munis" autocomplete="off" value={muniInicial} required /></label>
-  </div>
-  <div class="fila">
-    <label>{s.muniOrgano}<input name="muni2" list="munis" autocomplete="off" /></label>
-  </div>
-  <datalist id="munis">{munis.map((m) => <option value={m.nombre} />)}</datalist>
-  <button type="submit">{s.calcular}</button>
-  <p class="error" role="alert" hidden></p>
-</form>
-<section class="resultado" aria-live="polite" hidden></section>
-<p class="nota">{s.limites}</p>
+<div class="calc-bloque">
+  <form class="calc" data-lang={lang} novalidate>
+    <div class="campo">
+      <label for={`inicio-${lang}`}>{s.pInicio}</label>
+      <p class="ayuda" id={`inicio-ayuda-${lang}`}>{s.pInicioAyuda}</p>
+      <input id={`inicio-${lang}`} type="date" name="inicio" required aria-describedby={`inicio-ayuda-${lang}`} />
+    </div>
+    <fieldset class="campo">
+      <legend>{s.pPlazo}</legend>
+      <div class="plazo">
+        <input type="number" name="cantidad" min="1" max="730" value={cantidad} required inputmode="numeric" aria-label={s.cantidad} />
+        <select name="unidad" aria-label={s.unidad}>
+          {Object.entries(s.unidades).map(([k, v]) => <option value={k} selected={k === unidad}>{v}</option>)}
+        </select>
+      </div>
+      <div class="atajos" role="group" aria-label={s.frecuentes}>
+        {atajos.map((a) => <button type="button" class="atajo" data-n={a.n} data-u={a.u}>{textoAtajo(a.n, a.u)}</button>)}
+      </div>
+    </fieldset>
+    <div class="campo">
+      <label for={`muni1-${lang}`}>{s.pMuni}</label>
+      <p class="ayuda" id={`muni1-ayuda-${lang}`}>{s.pMuniAyuda}</p>
+      <input id={`muni1-${lang}`} name="muni1" list={`munis-${lang}`} autocomplete="off" value={muniInicial} required
+        placeholder={lang === 'ca' ? 'Per exemple, Sabadell' : 'Por ejemplo, Sabadell'} aria-describedby={`muni1-ayuda-${lang}`} />
+    </div>
+    <details class="campo organo">
+      <summary>{s.pOrgano}</summary>
+      <p class="ayuda" id={`muni2-ayuda-${lang}`}>{s.pOrganoAyuda}</p>
+      <input name="muni2" list={`munis-${lang}`} autocomplete="off" aria-label={s.muniOrgano} aria-describedby={`muni2-ayuda-${lang}`} />
+    </details>
+    <datalist id={`munis-${lang}`}>{munis.map((m) => <option value={m.nombre} />)}</datalist>
+    <button type="submit" class="calcular">{s.calcular}</button>
+    <p class="error" role="alert" hidden></p>
+  </form>
+
+  <section class="resultado" aria-live="polite">
+    <div class="hoja vacia" aria-hidden="true">
+      <div class="hoja-cab"><span class="anilla"></span><span class="hoja-mes">{s.hojaVacia}</span><span class="anilla"></span></div>
+      <div class="hoja-dia">?</div>
+      <div class="hoja-semana">&nbsp;</div>
+    </div>
+    <div class="detalle"><p>{s.hojaVaciaTexto}</p></div>
+  </section>
+</div>
+<p class="nota limites">{s.limites}</p>
 
 <script>
   import datos from '../../data/calendario.json';
@@ -41,26 +66,36 @@ const muniInicial = munis.find((m) => m.codigo === municipio)?.nombre ?? '';
   import { t, fechaLarga } from '../i18n.js';
 
   const cal = crearCalendario(datos);
-  const norm = (x: string) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’`´]/g, "'").toLowerCase().trim();
+  const norm = (x: string) => x.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’`´]/g, "'").toLowerCase().trim();
   const porNombre = new Map(listaLocalidades(datos).map((m) => [norm(m.nombre), m]));
   const hoyLocal = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-  const etiquetaTipo = (s, tipo) => ({ sabado: '', domingo: '', estatal: s.estatal, autonomico: s.autonomico, local: s.local })[tipo] ?? '';
+  const etiquetaTipo = (s: any, tipo: string) => ({ sabado: '', domingo: '', estatal: s.estatal, autonomico: s.autonomico, local: s.local } as any)[tipo] ?? '';
+  const may = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
+  const esc = (x: string) => x.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as any)[c]);
+  const utc = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); };
 
   for (const form of document.querySelectorAll<HTMLFormElement>('form.calc')) {
     const lang = form.dataset.lang as 'ca' | 'es';
-    const s = t[lang];
-    const salida = form.nextElementSibling as HTMLElement;
+    const s = t[lang] as any;
+    const salida = form.parentElement!.querySelector<HTMLElement>('.resultado')!;
     const error = form.querySelector<HTMLElement>('.error')!;
     const el = (n: string) => form.elements.namedItem(n) as HTMLInputElement;
 
     const params = new URLSearchParams(location.search);
-    if (params.get('d')) el('inicio').value = params.get('d')!;
-    else el('inicio').value = hoyLocal();
+    el('inicio').value = params.get('d') || hoyLocal();
     if (params.get('n')) el('cantidad').value = params.get('n')!;
     if (params.get('u')) el('unidad').value = params.get('u')!;
     const desdeCodigo = (c: string | null) => (c ? [...porNombre.values()].find((m) => m.codigo === c)?.nombre ?? '' : '');
     if (params.get('m1') && desdeCodigo(params.get('m1'))) el('muni1').value = desdeCodigo(params.get('m1'));
-    if (params.get('m2')) el('muni2').value = desdeCodigo(params.get('m2'));
+    if (params.get('m2')) { el('muni2').value = desdeCodigo(params.get('m2')); form.querySelector('details')!.open = true; }
+
+    const marcarAtajo = () => form.querySelectorAll<HTMLButtonElement>('.atajo').forEach((b) =>
+      b.setAttribute('aria-pressed', String(b.dataset.n === el('cantidad').value && b.dataset.u === el('unidad').value)));
+    form.querySelectorAll<HTMLButtonElement>('.atajo').forEach((b) => b.addEventListener('click', () => {
+      el('cantidad').value = b.dataset.n!; el('unidad').value = b.dataset.u!; marcarAtajo();
+    }));
+    el('cantidad').addEventListener('input', marcarAtajo); el('unidad').addEventListener('change', marcarAtajo);
+    marcarAtajo();
 
     function textoAviso(a: any) {
       if (a.tipo === 'sin_locales') return s.avisoSinLocales.replace('{m}', a.nombres.join(', ')).replace('{y}', a.anio);
@@ -68,61 +103,128 @@ const muniInicial = munis.find((m) => m.codigo === municipio)?.nombre ?? '';
       if (a.tipo === 'contencioso') return s.avisoContencioso;
       return '';
     }
+    function motivoTexto(m: any) {
+      const tipo = etiquetaTipo(s, m.tipo);
+      const dias = ({ ca: { sabado: 'Dissabte', domingo: 'Diumenge' }, es: { sabado: 'Sábado', domingo: 'Domingo' } } as any)[lang];
+      const texto = m.tipo === 'local' ? m.texto.replace(/^Festiu local|^Festa local/, s.festivoLocal)
+        : m.tipo === 'sabado' || m.tipo === 'domingo' ? dias[m.tipo]
+        : (m.nombres?.[lang] ?? m.texto);
+      return tipo && m.tipo !== 'local' ? `${texto} (${tipo.toLowerCase()})` : texto;
+    }
+    function ics(fecha: string, url: string) {
+      const f = fecha.replace(/-/g, '');
+      const sig = utc(fecha); sig.setUTCDate(sig.getUTCDate() + 1);
+      const f2 = sig.toISOString().slice(0, 10).replace(/-/g, '');
+      const ahora = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+      return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//diahabil.es//ES', 'BEGIN:VEVENT',
+        `UID:${f}-${Math.random().toString(36).slice(2)}@diahabil.es`, `DTSTAMP:${ahora}`,
+        `DTSTART;VALUE=DATE:${f}`, `DTEND;VALUE=DATE:${f2}`, `SUMMARY:${s.eventoTitulo}`, `URL:${url}`,
+        'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    }
 
-    function calcular() {
+    function calcular(desplazar: boolean) {
       error.hidden = true;
       const m1 = porNombre.get(norm(el('muni1').value));
-      const t2 = el('muni2').value.trim();
+      const t2 = (el('muni2').value || '').trim();
       const m2 = t2 ? porNombre.get(norm(t2)) : null;
-      if (!m1 || (t2 && !m2)) { error.textContent = s.errorMuni; error.hidden = false; salida.hidden = true; return; }
-      let r;
+      if (!m1 || (t2 && !m2)) { error.textContent = s.errorMuni; error.hidden = false; return; }
+      let r: any;
       try {
         r = calcularPlazo({
           inicio: el('inicio').value, cantidad: Number(el('cantidad').value), unidad: el('unidad').value,
           municipios: m2 ? [m1.codigo, m2.codigo] : [m1.codigo],
         }, cal);
-      } catch (e) { error.textContent = (e as Error).message; error.hidden = false; salida.hidden = true; return; }
+      } catch (e) { error.textContent = (e as Error).message; error.hidden = false; return; }
 
-      const filas = r.excluidos.map((e) => `<tr><td>${fechaLarga(e.fecha, lang)}</td><td>${e.motivos.map((m) => {
-        const tipo = etiquetaTipo(s, m.tipo);
-        const dias = { ca: { sabado: 'Dissabte', domingo: 'Diumenge' }, es: { sabado: 'Sábado', domingo: 'Domingo' } }[lang];
-        const texto = m.tipo === 'local' ? m.texto.replace(/^Festiu local|^Festa local/, s.festivoLocal)
-          : m.tipo === 'sabado' || m.tipo === 'domingo' ? dias[m.tipo]
-          : (m.nombres?.[lang] ?? m.texto);
-        return tipo && m.tipo !== 'local' ? `${texto} (${tipo.toLowerCase()})` : texto;
-      }).join(', ')}</td></tr>`).join('');
+      const d = utc(r.vencimiento);
+      const mes = d.toLocaleDateString(s.locale, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+      const semana = d.toLocaleDateString(s.locale, { weekday: 'long', timeZone: 'UTC' });
+      const n = r.excluidos.length;
+      const fueraSet = new Set(r.excluidos.map((e: any) => e.fecha));
+      let primero = r.inicioComputo;
+      if (r.unidad === 'dias_habiles') while (fueraSet.has(primero)) { const x = utc(primero); x.setUTCDate(x.getUTCDate() + 1); primero = x.toISOString().slice(0, 10); }
+      const filas = r.excluidos.map((e: any) => `<li><span>${esc(fechaLarga(e.fecha, lang))}</span> ${esc(e.motivos.map(motivoTexto).join(', '))}</li>`).join('');
+      const anomalias = [m1, m2].filter(Boolean).map((m: any) => (datos as any).anomalias?.[m.codigo.split('-')[0]]?.[lang]).filter(Boolean);
       salida.innerHTML = `
-        <p class="vence">${s.vence}<strong>${fechaLarga(r.vencimiento, lang)}</strong></p>
-        ${r.prorrogado ? `<p>${s.prorrogado}</p>` : ''}
-        ${r.avisos.map((a) => `<p class="aviso">${textoAviso(a)}</p>`).join('')}
-        ${[m1, m2].filter(Boolean).map((m) => (datos as any).anomalias?.[m!.codigo.split('-')[0]]?.[lang]).filter(Boolean).map((x) => `<p class="aviso">${x}</p>`).join('')}
-        ${!m2 ? `<p class="nota">${s.avisoOrgano}</p>` : ''}
-        <h3>${s.excluidos}</h3>
-        ${r.excluidos.length ? `<table><tbody>${filas}</tbody></table>` : `<p>${s.sinExcluidos}</p>`}
-        <button type="button" class="compartir">${s.compartir}</button>`;
-      salida.hidden = false;
+        <div class="hoja">
+          <div class="hoja-cab"><span class="anilla"></span><span class="hoja-mes">${esc(may(mes))}</span><span class="anilla"></span></div>
+          <div class="hoja-dia">${d.getUTCDate()}</div>
+          <div class="hoja-semana">${esc(may(semana))}</div>
+        </div>
+        <div class="detalle">
+          <p class="vence">${s.vence} <strong>${esc(fechaLarga(r.vencimiento, lang))}</strong>.</p>
+          <p>${s.empieza.replace('{d}', esc(fechaLarga(primero, lang)))} ${n === 0 ? s.sinExcluidos : n === 1 ? s.saltado1 : s.saltados.replace('{n}', n)}</p>
+          ${r.prorrogado ? `<p>${s.prorrogado}</p>` : ''}
+          ${r.avisos.map((a: any) => `<p class="aviso">${textoAviso(a)}</p>`).join('')}
+          ${anomalias.map((x: string) => `<p class="aviso">${x}</p>`).join('')}
+          ${!m2 ? `<p class="nota">${s.avisoOrgano}</p>` : ''}
+          ${n ? `<details class="excluidos"><summary>${s.verExcluidos} (${n})</summary><ul>${filas}</ul></details>` : ''}
+          <div class="acciones">
+            <button type="button" class="secundario anadir">${s.anadirCal}</button>
+            <button type="button" class="secundario compartir">${s.compartir}</button>
+          </div>
+        </div>`;
 
       const q = new URLSearchParams({ d: r.inicio, n: String(r.cantidad), u: r.unidad, m1: m1.codigo, ...(m2 ? { m2: m2.codigo } : {}) });
       history.replaceState(null, '', `${location.pathname}?${q}`);
       salida.querySelector<HTMLButtonElement>('.compartir')!.onclick = async (ev) => {
         try { await navigator.clipboard.writeText(location.href); (ev.target as HTMLElement).textContent = s.copiado; } catch {}
       };
+      salida.querySelector<HTMLButtonElement>('.anadir')!.onclick = () => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([ics(r.vencimiento, location.href)], { type: 'text/calendar' }));
+        a.download = `plazo-${r.vencimiento}.ics`; a.click(); URL.revokeObjectURL(a.href);
+      };
+      if (desplazar && window.matchMedia('(max-width: 860px)').matches) salida.scrollIntoView({ block: 'start' });
     }
 
-    form.addEventListener('submit', (ev) => { ev.preventDefault(); calcular(); });
-    if (params.get('d') && el('muni1').value) calcular();
+    form.addEventListener('submit', (ev) => { ev.preventDefault(); calcular(true); });
+    if (params.get('d') && el('muni1').value) calcular(false);
   }
 </script>
 
 <style>
-  .calc { display:grid; gap:12px; background:var(--accent-bg); padding:16px; border-radius:12px; margin:16px 0; }
-  .fila.dos { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  label { display:grid; gap:4px; font-size:.9rem; font-weight:600; }
-  input, select { font:inherit; padding:10px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg); width:100%; }
-  button { font:inherit; font-weight:600; padding:12px; border:0; border-radius:8px; background:var(--accent); color:#fff; cursor:pointer; }
-  @media (prefers-color-scheme: dark) { button { color:#0d1b30; } }
-  .error { color:#b42318; margin:0; }
+  .calc-bloque { display:grid; grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr); gap:28px; align-items:start; margin:8px 0 12px; }
+  .calc { display:grid; gap:22px; padding:26px; border:2px solid var(--ink); border-radius:14px; background:var(--paper); }
+  .campo { display:grid; gap:6px; margin:0; padding:0; border:0; min-width:0; }
+  .campo > label, .campo > legend, .organo summary { font-weight:700; font-size:1.05rem; padding:0; }
+  .ayuda { margin:0; font-size:.9rem; color:var(--ink-3); }
+  input, select { font:inherit; font-size:1.05rem; padding:12px 14px; border:1.5px solid #9a9a9a; border-radius:10px; background:var(--paper); color:var(--ink); width:100%; min-height:50px; }
+  input:focus, select:focus { border-color:var(--azul); outline:3px solid var(--azul-claro); outline-offset:0; }
+  .plazo { display:grid; grid-template-columns:110px 1fr; gap:10px; margin-top:4px; }
+  .atajos { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+  .atajo { font:inherit; font-size:.9rem; padding:6px 12px; border:1.5px solid var(--line); border-radius:999px; background:var(--paper); color:var(--ink); cursor:pointer; }
+  .atajo:hover { border-color:var(--ink); }
+  .atajo[aria-pressed="true"] { background:var(--ink); border-color:var(--ink); color:#fff; }
+  .organo summary { cursor:pointer; color:var(--azul); font-size:1rem; list-style:none; }
+  .organo summary::before { content:'+ '; }
+  .organo[open] summary::before { content:'− '; }
+  .organo[open] { gap:8px; }
+  .calcular { font:inherit; font-weight:700; font-size:1.1rem; padding:15px; border:0; border-radius:10px; background:var(--azul); color:#fff; cursor:pointer; }
+  .calcular:hover { background:var(--azul-hover); }
+  .error { color:var(--rojo); margin:0; font-weight:700; }
+
+  .resultado { position:sticky; top:20px; display:grid; gap:18px; scroll-margin-top:12px; }
+  .resultado :global(.hoja) { width:min(100%, 300px); border:2px solid var(--ink); border-radius:14px; overflow:hidden; background:var(--paper); text-align:center; box-shadow:0 6px 0 -2px var(--paper), 0 6px 0 0 var(--ink), 0 12px 0 -2px var(--paper), 0 12px 0 0 var(--ink); margin-bottom:12px; }
+  .resultado :global(.hoja-cab) { background:var(--ink); color:#fff; font-weight:700; padding:14px 12px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .resultado :global(.hoja-cab .anilla) { width:10px; height:10px; border-radius:50%; background:var(--paper); flex:none; }
+  .resultado :global(.hoja-dia) { font-size:7.5rem; line-height:1; font-weight:700; letter-spacing:-.04em; padding:22px 0 4px; }
+  .resultado :global(.hoja-semana) { font-size:1.2rem; padding:0 0 22px; color:var(--ink-2); }
+  .resultado :global(.hoja.vacia .hoja-dia) { color:var(--line); }
+  .resultado :global(.detalle p) { margin:0 0 10px; }
   .resultado :global(.vence) { font-size:1.15rem; }
-  .resultado :global(.vence strong) { display:block; font-size:1.5rem; }
-  .resultado :global(.compartir) { background:transparent; color:var(--accent); border:1px solid var(--accent); padding:8px 12px; margin-top:12px; }
+  .resultado :global(.excluidos summary) { cursor:pointer; color:var(--azul); font-weight:700; }
+  .resultado :global(.excluidos ul) { list-style:none; padding:0; margin:10px 0 0; font-size:.92rem; }
+  .resultado :global(.excluidos li) { padding:6px 0; border-bottom:1px solid var(--line); }
+  .resultado :global(.excluidos li span) { font-weight:700; display:block; }
+  .resultado :global(.acciones) { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+  .resultado :global(.secundario) { font:inherit; font-weight:700; padding:10px 14px; border:1.5px solid var(--ink); border-radius:10px; background:var(--paper); color:var(--ink); cursor:pointer; }
+  .resultado :global(.secundario:hover) { background:var(--soft); }
+  .limites { margin-top:20px; }
+  @media (max-width: 860px) {
+    .calc-bloque { grid-template-columns:1fr; }
+    .calc { padding:20px 16px; }
+    .resultado { position:static; }
+    .resultado :global(.hoja) { margin-inline:auto; }
+  }
 </style>
