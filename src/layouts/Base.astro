@@ -76,7 +76,9 @@ const bcLd = breadcrumbs.length ? {
     .sitio-cab nav { display:flex; gap:6px 22px; flex-wrap:wrap; font-size:.98rem; }
     .sitio-cab nav a { color:var(--ink); text-decoration:none; font-weight:700; }
     .sitio-cab nav a:hover { text-decoration:underline; }
-    .sitio-cab nav .idioma { font-weight:400; color:var(--ink-2); }
+    .sitio-cab .marca { margin-right:auto; }
+    .sitio-cab .idioma { color:var(--ink-2); text-decoration:none; }
+    .sitio-cab .idioma:hover { text-decoration:underline; }
     main.envoltorio { padding-top:32px; padding-bottom:64px; }
     .sitio-pie { background:var(--soft); border-top:1px solid var(--line); font-size:.92rem; color:var(--ink-2); }
     .sitio-pie .envoltorio { display:grid; grid-template-columns:2fr 1fr 1fr; gap:24px 40px; padding-top:40px; padding-bottom:40px; }
@@ -88,7 +90,7 @@ const bcLd = breadcrumbs.length ? {
       body { font-size:16.5px; }
       .sitio-pie .envoltorio { grid-template-columns:1fr; }
       h2 { margin-top:44px; }
-      .sitio-cab nav { gap:4px 16px; font-size:.92rem; }
+      .sitio-cab nav { gap:4px 16px; font-size:.92rem; order:3; width:100%; }
       .logo-texto { font-size:1.15rem; }
     }
     @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
@@ -101,8 +103,9 @@ const bcLd = breadcrumbs.length ? {
       <nav aria-label={lang === 'ca' ? 'Principal' : 'Principal'}>
         <a href={rutas.calculadora[lang]}>Calculadora</a>
         <a href={rutas.calendario[lang](2026)}>{lang === 'ca' ? 'Festius 2026' : 'Festivos 2026'}</a>
-        <a class="idioma" href={alternates[otro]} hreflang={otro} lang={otro}>{s.otroIdioma}</a>
+        <a href={rutas.calendario[lang](2027)}>{lang === 'ca' ? 'Festius 2027' : 'Festivos 2027'}</a>
       </nav>
+      <a class="idioma" href={alternates[otro]} hreflang={otro} lang={otro}>{s.otroIdioma}</a>
     </div>
   </header>
   <main class="envoltorio">
