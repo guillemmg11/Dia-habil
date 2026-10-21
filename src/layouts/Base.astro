@@ -1,5 +1,6 @@
 ---
 import { t, rutas } from '../i18n.js';
+import { paginas, rutasLegales } from '../legal.js';
 interface Props {
   lang: 'ca' | 'es';
   title: string;
@@ -58,6 +59,8 @@ const bcLd = breadcrumbs.length ? {
     .aviso { background:var(--warn-bg); color:var(--warn); padding:10px 12px; border-radius:8px; margin:12px 0; }
     .nota { font-size:.875rem; color:var(--muted); }
     footer { border-top:1px solid var(--line); padding-top:16px; padding-bottom:32px; font-size:.85rem; color:var(--muted); }
+    footer .legales { display:flex; flex-wrap:wrap; gap:6px 16px; }
+    footer .legales a { color:var(--muted); }
   </style>
 </head>
 <body>
@@ -78,7 +81,11 @@ const bcLd = breadcrumbs.length ? {
     <slot />
   </main>
   <footer>
-    <p><a href={rutas.metodologia[lang]}>{s.metodologia}</a> · Rankova</p>
+    <nav class="legales" aria-label={lang === 'ca' ? 'Informació legal' : 'Información legal'}>
+      <a href={rutas.metodologia[lang]}>{s.metodologia}</a>
+      {Object.entries(rutasLegales).map(([clave, r]) => <a href={r[lang]}>{paginas[clave as keyof typeof paginas][lang].titulo}</a>)}
+    </nav>
+    <p>{lang === 'ca' ? 'Un projecte de' : 'Un proyecto de'} <a href="https://rankova.es">Rankova</a> · {lang === 'ca' ? 'Eina orientativa: no substitueix l’assessorament professional.' : 'Herramienta orientativa: no sustituye el asesoramiento profesional.'}</p>
   </footer>
 </body>
 </html>

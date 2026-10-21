@@ -1,0 +1,20 @@
+---
+import Base from '../layouts/Base.astro';
+import { t, rutas } from '../i18n.js';
+import { paginas, rutasLegales, ACTUALIZADO } from '../legal.js';
+
+export function getStaticPaths() {
+  return Object.entries(rutasLegales).flatMap(([clave, r]) =>
+    (['es', 'ca'] as const).map((lang) => ({ params: { legal: r[lang].replace(/^\/|\/$/g, '') }, props: { clave, lang } })));
+}
+const { clave, lang } = Astro.props as { clave: keyof typeof paginas; lang: 'ca' | 'es' };
+const s = t[lang];
+const p = paginas[clave][lang];
+const alternates = rutasLegales[clave];
+---
+<Base lang={lang} title={`${p.titulo} · ${s.marca}`} description={`${p.titulo} de diahabil.es`} alternates={alternates}
+  breadcrumbs={[{ name: s.marca, url: rutas.inicio[lang] }, { name: p.titulo, url: alternates[lang] }]}>
+  <h1>{p.titulo}</h1>
+  <p class="nota">{lang === 'ca' ? 'Última actualització' : 'Última actualización'}: {ACTUALIZADO[lang]}</p>
+  {p.secciones.map(([h, html]) => (<><h2>{h}</h2><Fragment set:html={html} /></>))}
+</Base>
