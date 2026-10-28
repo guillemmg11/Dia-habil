@@ -124,5 +124,19 @@
    "2027-12-07"
   ],
   "fuente": "https://www.santboi.cat/calendarifestiu"
+ },
+ "Esplugues de Llobregat": {
+  "fechas": [
+   "2027-05-17",
+   "2027-09-21"
+  ],
+  "fuente": "https://www.esplugues.cat/ciutat/dies-festius-festes-laborals-i-locals-a-esplugues/"
+ },
+ "Torelló": {
+  "fechas": [
+   "2027-05-17",
+   "2027-09-20"
+  ],
+  "fuente": "https://torello.cat/les-festes-locals-del-2027-seran-la-segona-pasqua-i-rocaprevera/"
  }
 }
