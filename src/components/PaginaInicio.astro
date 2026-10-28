@@ -5,22 +5,36 @@ import Anuncio from './Anuncio.astro';
 import { t, rutas } from '../i18n.js';
 import datos from '../../data/calendario.json';
 import { listaMunicipios, esIndexado } from '../lib/municipios.js';
+import { diaSemana } from '../lib/fechas.js';
 interface Props { lang: 'ca' | 'es'; }
 const { lang } = Astro.props;
 const s = t[lang];
 const ca = lang === 'ca';
 const site = Astro.site!.toString().replace(/\/$/, '');
-const populares = listaMunicipios(datos.municipios).filter(esIndexado);
+const munis = listaMunicipios(datos.municipios);
+const populares = munis.filter(esIndexado);
+const con2027 = munis.filter((m) => (datos as any).provisionales?.['2027']?.[m.codigo] || (datos as any).locales?.['2027']?.[m.codigo]);
 const nNucleos = Object.keys((datos as any).nucleos['2026']).length;
-const nMunis = Object.keys(datos.municipios).length;
+const nMunis = munis.length;
 const calc = (n: number, u: string) => `${rutas.calculadora[lang]}?n=${n}&u=${u}`;
 
+// Festivos comunes de 2026 y 2027. Se pintan los próximos según la fecha de compilación
+// y el script los vuelve a filtrar con la fecha del visitante.
+const generales = ['2026', '2027'].flatMap((y) => ((datos.generales as any)[y] ?? []).filter((f: any) => !f.soloEn));
+const n2026 = ((datos.generales as any)['2026'] ?? []).filter((f: any) => !f.soloEn).length;
+const n2027 = ((datos.generales as any)['2027'] ?? []).filter((f: any) => !f.soloEn).length;
+const hoy = new Date().toISOString().slice(0, 10);
+const PROXIMOS = 6;
+const primeroFuturo = generales.findIndex((f: any) => f.fecha >= hoy);
+const fmtLargo = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString(s.locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const nombre = (f: any) => f.nombre[lang] ?? f.nombre;
+
 const title = ca
-  ? 'Calculadora de dies hàbils i terminis administratius a Catalunya | Dia hàbil'
-  : 'Calculadora de días hábiles y plazos administrativos en Cataluña | Día hábil';
+  ? 'Festius a Catalunya per municipi i calculadora de dies hàbils | Dia hàbil'
+  : 'Festivos en Cataluña por municipio y calculadora de días hábiles | Día hábil';
 const description = ca
-  ? 'Calcula gratis quin dia venç un termini administratiu en dies hàbils, naturals o mesos, amb els festius locals dels 947 municipis de Catalunya.'
-  : 'Calcula gratis qué día vence un plazo administrativo en días hábiles, naturales o meses, con los festivos locales de los 947 municipios de Cataluña.';
+  ? `Festes locals 2026 i 2027 dels ${nMunis} municipis de Catalunya, calendari laboral, ponts i calculadora gratuïta de terminis en dies hàbils.`
+  : `Fiestas locales 2026 y 2027 de los ${nMunis} municipios de Cataluña, calendario laboral, puentes y calculadora gratuita de plazos en días hábiles.`;
 
 const plazos = ca ? [
   { tramite: 'Esmenar una sol·licitud', plazo: '10 dies hàbils', base: 'Art. 68.1 Llei 39/2015', url: calc(10, 'dias_habiles') },
@@ -49,33 +63,92 @@ const pasos = ca ? [
 ];
 
 const faq = ca ? [
+  ['Quants festius hi ha a Catalunya?', `Cada any hi ha 14 festius laborals: ${n2026} de comuns a tot Catalunya i 2 festes locals que tria cada municipi. El 2027 també en són ${n2027} de comuns, però canvien les dates: entra Tots Sants i el Dia de la Constitució i surten l’Assumpció i Sant Esteve.`],
+  ['Quan es publiquen les festes locals del 2027?', 'La Generalitat publica al DOGC l’ordre amb les festes locals de tots els municipis cap a desembre. Abans, alguns ajuntaments ja les aproven en ple: les mostrem com a provisionals, amb la font.'],
+  ['Què és una festa local?', 'És un dels dos dies festius que cada ajuntament proposa per al seu municipi, normalment la festa major o el patró. Només és festiu en aquell municipi.'],
   ['Què són els dies hàbils?', 'Són tots els dies excepte els dissabtes, els diumenges i els declarats festius. Ho diu l’article 30.2 de la Llei 39/2015, que regula els terminis davant l’Administració.'],
   ['El dissabte és hàbil?', 'No. Des del 2 d’octubre de 2016, amb la Llei 39/2015, els dissabtes són inhàbils per als terminis administratius.'],
   ['L’agost és hàbil?', 'Per als terminis administratius, sí. L’agost només és inhàbil en via judicial, per exemple per presentar un recurs contenciós administratiu.'],
-  ['Quins festius compten?', 'Els festius estatals, els de Catalunya i les dues festes locals del municipi de la persona interessada. Si l’òrgan té la seu en un altre municipi, també compten els d’aquest (art. 30.6).'],
-  ['Com es compta un termini en mesos?', 'De data a data: si et notifiquen el 15 de març, un termini d’un mes venç el 15 d’abril. Si aquell mes no té el dia, venç l’últim dia del mes.'],
 ] : [
+  ['¿Cuántos festivos hay en Cataluña?', `Cada año hay 14 festivos laborales: ${n2026} comunes en toda Cataluña y 2 fiestas locales que elige cada municipio. En 2027 también son ${n2027} comunes, pero cambian las fechas: entran Todos los Santos y el Día de la Constitución y salen la Asunción y Sant Esteve.`],
+  ['¿Cuándo se publican las fiestas locales de 2027?', 'La Generalitat publica en el DOGC la orden con las fiestas locales de todos los municipios hacia diciembre. Antes, algunos ayuntamientos ya las aprueban en pleno: las mostramos como provisionales, con la fuente.'],
+  ['¿Qué es una fiesta local?', 'Es uno de los dos días festivos que cada ayuntamiento propone para su municipio, normalmente la fiesta mayor o el patrón. Solo es festivo en ese municipio.'],
   ['¿Qué son los días hábiles?', 'Son todos los días excepto los sábados, los domingos y los declarados festivos. Lo dice el artículo 30.2 de la Ley 39/2015, que regula los plazos ante la Administración.'],
   ['¿El sábado es hábil?', 'No. Desde el 2 de octubre de 2016, con la Ley 39/2015, los sábados son inhábiles para los plazos administrativos.'],
   ['¿Agosto es hábil?', 'Para los plazos administrativos, sí. Agosto solo es inhábil en vía judicial, por ejemplo para presentar un recurso contencioso-administrativo.'],
-  ['¿Qué festivos cuentan?', 'Los festivos estatales, los de Cataluña y las dos fiestas locales del municipio de la persona interesada. Si el órgano tiene su sede en otro municipio, también cuentan los de ese municipio (art. 30.6).'],
-  ['¿Cómo se cuenta un plazo en meses?', 'De fecha a fecha: si te notifican el 15 de marzo, un plazo de un mes vence el 15 de abril. Si ese mes no tiene ese día, vence el último día del mes.'],
 ];
 
 const jsonld = {
-  '@context': 'https://schema.org', '@type': 'WebApplication', name: s.marca, url: site + rutas.inicio[lang],
-  description, applicationCategory: 'UtilitiesApplication', operatingSystem: 'Web', inLanguage: s.locale,
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+  '@context': 'https://schema.org', '@type': 'WebSite', name: s.marca, url: site + rutas.inicio[lang],
+  description, inLanguage: s.locale,
   publisher: { '@type': 'Organization', name: 'Rankova', url: 'https://rankova.es' },
 };
 ---
 <Base lang={lang} title={title} description={description} alternates={rutas.inicio} jsonld={jsonld}>
   <section class="portada">
-    <h1>{ca ? 'Calculadora de terminis en dies hàbils' : 'Calculadora de plazos en días hábiles'}</h1>
+    <h1>{ca ? 'Festius i dies hàbils a Catalunya' : 'Festivos y días hábiles en Cataluña'}</h1>
     <p class="lead">{ca
+      ? `Les festes locals del 2026 i el 2027 dels ${nMunis} municipis, el calendari laboral i una calculadora de terminis amb els festius del teu municipi.`
+      : `Las fiestas locales de 2026 y 2027 de los ${nMunis} municipios, el calendario laboral y una calculadora de plazos con los festivos de tu municipio.`}</p>
+
+    <div class="buscador">
+      <label for="filtro" class="etiqueta">{ca ? 'Quins festius té el teu municipi?' : '¿Qué festivos tiene tu municipio?'}</label>
+      <input id="filtro" type="search" autocomplete="off" placeholder={ca ? 'Escriu el nom, per exemple Terrassa' : 'Escribe el nombre, por ejemplo Terrassa'} />
+      <ul id="lista" class="resultados" hidden>
+        {munis.map((m) => (
+          <li><a href={rutas.municipio[lang](2026, m.slug)}>{m.nombre}</a> <a class="anio" href={rutas.municipio[lang](2027, m.slug)} aria-label={ca ? `Festius ${m.nombre} 2027` : `Festivos ${m.nombre} 2027`}>2027</a></li>
+        ))}
+      </ul>
+      <p id="sin-resultados" class="nota" hidden>{ca ? 'Cap municipi coincideix amb la cerca.' : 'Ningún municipio coincide con la búsqueda.'}</p>
+    </div>
+
+    <ul class="accesos">
+      <li><a href={rutas.calendario[lang](2026)}><strong>{ca ? 'Festius 2026' : 'Festivos 2026'}</strong><span>{ca ? 'Calendari laboral i ponts' : 'Calendario laboral y puentes'}</span></a></li>
+      <li><a href={rutas.calendario[lang](2027)}><strong>{ca ? 'Festius 2027' : 'Festivos 2027'}</strong><span>{ca ? 'Festius comuns i primeres festes locals' : 'Festivos comunes y primeras fiestas locales'}</span></a></li>
+      <li><a href="#calculadora"><strong>{ca ? 'Calculadora de terminis' : 'Calculadora de plazos'}</strong><span>{ca ? 'Quin dia venç el teu termini' : 'Qué día vence tu plazo'}</span></a></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="proximos">
+    <h2 id="proximos">{ca ? 'Propers festius a tot Catalunya' : 'Próximos festivos en toda Cataluña'}</h2>
+    <ol class="proximos" data-n={PROXIMOS}>
+      {generales.map((f: any, i: number) => {
+        const visible = primeroFuturo >= 0 && i >= primeroFuturo && i < primeroFuturo + PROXIMOS;
+        const finde = [0, 6].includes(diaSemana(f.fecha));
+        return <li data-fecha={f.fecha} hidden={!visible}><strong>{nombre(f)}</strong><span>{fmtLargo(f.fecha)}{finde ? (ca ? ' · cau en cap de setmana' : ' · cae en fin de semana') : ''}</span></li>;
+      })}
+    </ol>
+    <p class="nota">{ca ? 'A més, cada municipi té dues festes locals: cerca el teu a dalt.' : 'Además, cada municipio tiene dos fiestas locales: busca el tuyo arriba.'}</p>
+  </section>
+
+  <Anuncio lang={lang} alto={250} />
+
+  {con2027.length > 0 && (
+    <section aria-labelledby="ya2027">
+      <h2 id="ya2027">{ca ? 'Municipis amb les festes locals del 2027' : 'Municipios con las fiestas locales de 2027'}</h2>
+      <p>{ca
+        ? 'Aquests ajuntaments ja han aprovat les seves festes locals del 2027, abans que surti l’ordre del DOGC.'
+        : 'Estos ayuntamientos ya han aprobado sus fiestas locales de 2027, antes de que salga la orden del DOGC.'}</p>
+      <ul class="munis">{con2027.map((m) => <li><a href={rutas.municipio[lang](2027, m.slug)}>{ca ? `Festius ${m.nombre} 2027` : `Festivos ${m.nombre} 2027`}</a></li>)}</ul>
+    </section>
+  )}
+
+  <section aria-labelledby="festivos">
+    <h2 id="festivos">{ca ? 'Festius 2026 per municipi' : 'Festivos 2026 por municipio'}</h2>
+    <p>{ca
+      ? `Calendari laboral de ${nMunis} municipis i ${nNucleos} nuclis de Catalunya, amb les festes locals publicades al DOGC.`
+      : `Calendario laboral de ${nMunis} municipios y ${nNucleos} núcleos de Cataluña, con las fiestas locales publicadas en el DOGC.`}</p>
+    <ul class="munis">{populares.map((m) => <li><a href={rutas.municipio[lang](2026, m.slug)}>{m.nombre}</a></li>)}</ul>
+    <p class="enlaces-anio"><a class="enlace-fuerte" href={rutas.calendario[lang](2026)}>{ca ? 'Tots els municipis: festius 2026' : 'Todos los municipios: festivos 2026'}</a> <a class="enlace-fuerte" href={rutas.calendario[lang](2027)}>{ca ? 'Festius de Catalunya 2027' : 'Festivos en Cataluña 2027'}</a></p>
+  </section>
+
+  <section id="calculadora" class="bloque-calc" aria-labelledby="calc-titulo">
+    <h2 id="calc-titulo">{ca ? 'Calculadora de terminis en dies hàbils' : 'Calculadora de plazos en días hábiles'}</h2>
+    <p>{ca
       ? 'Digues-nos quan et van notificar i on vius: et diem quin dia venç el termini, amb els caps de setmana i els festius del teu municipi ja descomptats.'
       : 'Dinos cuándo te notificaron y dónde vives: te decimos qué día vence el plazo, con los fines de semana y los festivos de tu municipio ya descontados.'}</p>
     <Calculadora lang={lang} />
+    <p><a class="enlace-fuerte" href={rutas.calculadora[lang]}>{ca ? 'Obrir la calculadora a pantalla completa' : 'Abrir la calculadora a pantalla completa'}</a></p>
   </section>
 
   <Anuncio lang={lang} alto={250} />
@@ -101,17 +174,6 @@ const jsonld = {
     </div>
   </section>
 
-  <Anuncio lang={lang} alto={250} />
-
-  <section aria-labelledby="festivos">
-    <h2 id="festivos">{ca ? 'Festius 2026 per municipi' : 'Festivos 2026 por municipio'}</h2>
-    <p>{ca
-      ? `Calendari laboral de ${nMunis} municipis i ${nNucleos} nuclis de Catalunya, amb les festes locals publicades al DOGC.`
-      : `Calendario laboral de ${nMunis} municipios y ${nNucleos} núcleos de Cataluña, con las fiestas locales publicadas en el DOGC.`}</p>
-    <ul class="munis">{populares.map((m) => <li><a href={rutas.municipio[lang](2026, m.slug)}>{m.nombre}</a></li>)}</ul>
-    <p class="enlaces-anio"><a class="enlace-fuerte" href={rutas.calendario[lang](2026)}>{ca ? 'Festius de Catalunya 2026' : 'Festivos en Cataluña 2026'}</a> <a class="enlace-fuerte" href={rutas.calendario[lang](2027)}>{ca ? 'Festius de Catalunya 2027' : 'Festivos en Cataluña 2027'}</a></p>
-  </section>
-
   <section aria-labelledby="preguntas">
     <h2 id="preguntas">{ca ? 'Preguntes freqüents' : 'Preguntas frecuentes'}</h2>
     <div class="faq">{faq.map(([q, a]) => <details><summary>{q}</summary><p>{a}</p></details>)}</div>
@@ -120,14 +182,69 @@ const jsonld = {
   <section class="fuentes" aria-labelledby="datos">
     <h2 id="datos">{ca ? 'D’on surten les dades' : 'De dónde salen los datos'}</h2>
     <p>{ca
-      ? 'Les festes locals surten de l’Ordre EMT/208/2025 (DOGC núm. 9565) i la seva modificació, l’Ordre EMT/3/2026. Els festius estatals i de Catalunya, del BOE i del DOGC. Revisem cada canvi publicat.'
-      : 'Las fiestas locales salen de la Ordre EMT/208/2025 (DOGC núm. 9565) y su modificación, la Ordre EMT/3/2026. Los festivos estatales y de Cataluña, del BOE y del DOGC. Revisamos cada cambio publicado.'}</p>
-    <p class="nota">{s.actualizado} 21/10/2026. {s.avisoDatos} <a href={ca ? '/ca/contacte/' : '/es/contacto/'}>{ca ? 'Contacte' : 'Contacto'}</a></p>
+      ? 'Les festes locals surten de l’Ordre EMT/208/2025 (DOGC núm. 9565) i la seva modificació, l’Ordre EMT/3/2026. Les del 2027, dels acords dels ajuntaments fins que surti l’ordre anual. Els festius estatals i de Catalunya, del BOE i del DOGC. Revisem cada canvi publicat.'
+      : 'Las fiestas locales salen de la Ordre EMT/208/2025 (DOGC núm. 9565) y su modificación, la Ordre EMT/3/2026. Las de 2027, de los acuerdos de los ayuntamientos hasta que salga la orden anual. Los festivos estatales y de Cataluña, del BOE y del DOGC. Revisamos cada cambio publicado.'}</p>
+    <p class="nota">{s.actualizado} 28/10/2026. {s.avisoDatos} <a href={ca ? '/ca/contacte/' : '/es/contacto/'}>{ca ? 'Contacte' : 'Contacto'}</a></p>
   </section>
+
+  <script>
+    // Buscador de municipios.
+    const f = document.getElementById('filtro') as HTMLInputElement;
+    const lista = document.getElementById('lista')!;
+    const vacio = document.getElementById('sin-resultados')!;
+    const norm = (x: string) => x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    f?.addEventListener('input', () => {
+      const q = norm(f.value.trim());
+      let n = 0;
+      for (const li of lista.querySelectorAll<HTMLLIElement>('li')) {
+        const ok = q.length >= 2 && norm(li.firstElementChild?.textContent ?? '').includes(q);
+        li.hidden = !ok;
+        if (ok) n++;
+      }
+      lista.hidden = n === 0;
+      vacio.hidden = q.length < 2 || n > 0;
+    });
+
+    // Próximos festivos con la fecha del visitante.
+    const ol = document.querySelector<HTMLOListElement>('.proximos');
+    if (ol) {
+      const d = new Date();
+      const hoy = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      let n = 0;
+      const max = Number(ol.dataset.n);
+      for (const li of ol.querySelectorAll<HTMLLIElement>('li')) {
+        const ok = (li.dataset.fecha ?? '') >= hoy && n < max;
+        li.hidden = !ok;
+        if (ok) n++;
+      }
+    }
+  </script>
 </Base>
 
 <style>
   .portada { padding-top:8px; }
+  .etiqueta { display:block; font-weight:700; font-size:1.1rem; margin:8px 0 8px; }
+  .buscador { max-width:560px; }
+  #filtro { font:inherit; font-size:1.05rem; padding:12px 14px; border:1.5px solid #9a9a9a; border-radius:10px; width:100%; min-height:52px; }
+  #filtro:focus { border-color:var(--azul); outline:3px solid var(--azul-claro); }
+  .resultados { list-style:none; margin:8px 0 0; padding:6px 16px; border:1px solid var(--line); border-radius:10px; max-height:300px; overflow:auto; }
+  .resultados li { padding:7px 0; display:flex; justify-content:space-between; gap:12px; }
+  .resultados li[hidden] { display:none; }
+  .resultados li:not([hidden]) ~ li:not([hidden]) { border-top:1px solid var(--line); }
+  .resultados a { color:var(--ink); font-weight:700; }
+  .resultados a.anio { color:var(--azul); font-weight:400; font-size:.95rem; }
+  .accesos { list-style:none; padding:0; margin:28px 0 0; display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; max-width:none; }
+  .accesos li { max-width:none; }
+  .accesos a { display:flex; flex-direction:column; gap:2px; height:100%; padding:16px 18px; border:1.5px solid var(--line); border-radius:12px; text-decoration:none; color:var(--ink); }
+  .accesos a:hover { border-color:var(--azul); background:var(--azul-claro); color:var(--ink); }
+  .accesos strong { font-size:1.08rem; }
+  .accesos span { color:var(--ink-3); font-size:.92rem; }
+  .proximos { list-style:none; padding:0; margin:12px 0; border-top:2px solid var(--ink); max-width:var(--texto); }
+  .proximos li { padding:10px 0; border-bottom:1px solid var(--line); display:grid; }
+  .proximos li[hidden] { display:none; }
+  .proximos span { color:var(--ink-3); font-size:.94rem; }
+  .proximos span::first-letter { text-transform:uppercase; }
+  .bloque-calc { scroll-margin-top:16px; }
   .pasos { list-style:none; counter-reset:paso; padding:0; margin:20px 0 8px; display:grid; grid-template-columns:repeat(3, 1fr); gap:28px; }
   .pasos li { counter-increment:paso; border-top:2px solid var(--ink); padding-top:14px; }
   .pasos li::before { content:counter(paso); display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:var(--ink); color:#fff; font-weight:700; }
@@ -137,7 +254,7 @@ const jsonld = {
   .plazos td.fuerte { font-weight:700; white-space:nowrap; }
   .plazos a { font-weight:700; }
   .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
-  .munis { list-style:none; padding:0; margin:16px 0; columns:4 180px; column-gap:28px; }
+  .munis { list-style:none; padding:0; margin:16px 0; columns:4 150px; column-gap:24px; max-width:none; }
   .munis li { padding:5px 0; break-inside:avoid; }
   .munis a { color:var(--ink); }
   .enlace-fuerte { font-weight:700; }
@@ -151,6 +268,7 @@ const jsonld = {
   .fuentes { background:var(--soft); border-radius:14px; padding:4px 24px 12px; margin-top:56px; }
   .fuentes h2 { margin-top:24px; }
   @media (max-width: 720px) {
+    .accesos { grid-template-columns:1fr; gap:10px; }
     .pasos { grid-template-columns:1fr; gap:20px; }
     .fuentes { padding:4px 16px 8px; }
     .plazos th:nth-child(3), .plazos td:nth-child(3) { display:none; }

@@ -41,6 +41,20 @@ export const INDEXADOS_NOMBRES = [
   'Sant Adrià de Besòs', 'Ripollet', 'Montcada i Reixac', 'Santa Coloma de Gramenet', 'Olot',
   // Añadidos por interés en Google Trends (octubre 2026) y población.
   'Sant Just Desvern', 'Barberà del Vallès', 'Viladecans', 'Cerdanyola del Vallès',
+  // Segunda tanda (28/10/2026): municipios de más de ~15.000 habitantes y los que ya
+  // reciben impresiones en Search Console aunque estuvieran en noindex.
+  'Vilafranca del Penedès', 'Salt', 'Sant Pere de Ribes', 'Calafell', 'Martorell',
+  'Sant Andreu de la Barca', 'Sant Vicenç dels Horts', 'Premià de Mar', 'Pineda de Mar', 'Valls',
+  'Santa Perpètua de Mogoda', 'Castellar del Vallès', 'Olesa de Montserrat', 'Palafrugell',
+  'Esparreguera', 'El Masnou', 'Sant Feliu de Guíxols', 'Vilassar de Mar', 'Manlleu', 'Amposta',
+  'Les Franqueses del Vallès', 'Banyoles', 'Roses', 'Sant Quirze del Vallès', 'Caldes de Montbui',
+  'Parets del Vallès', 'Malgrat de Mar', 'Calella', 'Cardedeu', 'Sant Celoni', 'Tordera',
+  'Balaguer', 'Berga', 'Torredembarra', 'La Garriga', 'Tàrrega', 'Canovelles', 'Arenys de Mar',
+  'Montornès del Vallès', 'Cubelles', 'Mollerussa', 'Palau-solità i Plegamans',
+  'Corbera de Llobregat', "Lliçà d'Amunt", 'Torelló', 'Cunit', 'La Ràpita', "Sant Sadurní d'Anoia",
+  'La Llagosta', 'Badia del Vallès', 'Abrera', 'Castellbisbal', 'Montgat', "La Seu d'Urgell",
+  'Mont-Roig del Camp', 'Deltebre', 'Ripoll', 'Sant Joan de Vilatorrada', 'Pallejà', 'Premià de Dalt',
+  'Vielha e Mijaran', 'Puigcerdà', 'Santa Coloma de Farners', 'Sant Andreu de Llavaneres',
 ];
 const indexados = new Set(INDEXADOS_NOMBRES);
 export const esIndexado = (m) => indexados.has(m.nombre);
