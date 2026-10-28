@@ -75,5 +75,54 @@
    "2027-09-24"
   ],
   "fuente": "https://elwebdelmirall.net/noticies/economia/6293-les-festes-locals-seran-el-17-de-maig-i-el-24-de-setembre"
+ },
+ "La Llagosta": {
+  "fechas": [
+   "2027-03-19",
+   "2027-09-10"
+  ],
+  "fuente": "https://www.llagosta.cat/actualitat/noticies/el-ple-aprova-els-dos-dies-festius-locals-del-2027.html"
+ },
+ "Premià de Dalt": {
+  "fechas": [
+   "2027-05-17",
+   "2027-06-29"
+  ],
+  "fuente": "https://www.premiadedalt.cat/news/les-festes-locals-de-premia-de-dalt-per-al-2027-ja-tenen-data"
+ },
+ "Martorell": {
+  "fechas": [
+   "2027-04-26",
+   "2027-08-16"
+  ],
+  "fuente": "https://x.com/AjuntaMartorell/status/2051635746289729637"
+ },
+ "Montgat": {
+  "fechas": [
+   "2027-04-23",
+   "2027-05-17"
+  ],
+  "fuente": "https://x.com/Montgat/status/2070211186100957219"
+ },
+ "Caldes de Montbui": {
+  "fechas": [
+   "2027-05-17",
+   "2027-10-11"
+  ],
+  "fuente": "https://www.caldesdemontbui.cat/actualitat/avisos/festes-locals-de-lany-2027.html"
+ },
+ "Canovelles": {
+  "fechas": [
+   "2027-05-07",
+   "2027-07-26"
+  ],
+  "fuente": "https://www.canovelles.cat/el-municipi/festes-locals"
+ },
+ "Sant Boi de Llobregat": {
+  "fechas": [
+   "2027-05-20",
+   "2027-12-07"
+  ],
+  "fuente": "https://www.santboi.cat/calendarifestiu"
  }
 }
